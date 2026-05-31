@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectStatus {
+  BUILDING
+  SHIPPED
+  LEARNING
+  STUDYING
+  ESSAY
+}
+
+enum StationState {
+  CURRENT
+  PLANNED
+  GOAL
+}
+
+enum Locale {
+  EN
+  FR
+}
+
+model Profile {
+  id              String   @id @default(cuid())
+  name            String   @default("Auxance Jourdan")
+  handle          String   @default("Auxance")
+  emailPublic     String   @default("jauxance@gmail.com")
+  github          String?
+  linkedin        String?
+  twitter         String?
+  readcv          String?
+  abstractEn      String   @db.Text
+  abstractFr      String   @db.Text
+  contactBlurbEn  String   @db.Text
+  contactBlurbFr  String   @db.Text
+  defaultLocale   Locale   @default(EN)
+  updatedAt       DateTime @updatedAt
+}
+
+model NowItem {
+  id        String   @id @default(cuid())
+  label     String
+  titleEn   String
+  titleFr   String
+  bodyEn    String   @db.Text
+  bodyFr    String   @db.Text
+  stack     String
+  order     Int
+  published Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  nameEn       String
+  nameFr       String
+  taglineEn    String        @db.Text
+  taglineFr    String        @db.Text
+  status       ProjectStatus
+  stack        String[]
+  liveUrl      String?
+  repoUrl      String?
+  featured     Boolean       @default(false)
+  order        Int
+  published    Boolean       @default(true)
+  contextEn    String[]      @default([])
+  contextFr    String[]      @default([])
+  architecture Json?
+  decisions    Json?
+  lessons      Json?
+  heroImage    String?
+  timelineEn   String?
+  timelineFr   String?
+  roleEn       String?
+  roleFr       String?
+  teamEn       String?
+  teamFr       String?
+  contextLabelEn String?
+  contextLabelFr String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model ResearchTopic {
+  id        String   @id @default(cuid())
+  number    String
+  titleEn   String
+  titleFr   String
+  bodyEn    String   @db.Text
+  bodyFr    String   @db.Text
+  order     Int
+  published Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+model Reference {
+  id        String  @id @default(cuid())
+  citation  String  @db.Text
+  order     Int
+  published Boolean @default(true)
+}
+
+model TrajectoryStation {
+  id        String       @id @default(cuid())
+  year      String
+  instEn    String
+  instFr    String
+  objEn     String       @db.Text
+  objFr     String       @db.Text
+  state     StationState
+  order     Int
+  updatedAt DateTime     @updatedAt
+}
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}

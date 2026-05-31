@@ -1,0 +1,66 @@
+{
+  "nav": {
+    "work": "Work",
+    "research": "Research",
+    "now": "Now",
+    "contact": "Contact"
+  },
+  "hero": {
+    "chatPlaceholder": "Ask Heather anything about my work, research, or trajectory",
+    "chip1": "What is JobMatch?",
+    "chip2": "Why ML research?",
+    "chip3": "Why China?",
+    "more": "More",
+    "less": "Less",
+    "heatherLabel": "Heather · AI assistant",
+    "heatherThinking": "Heather is thinking…"
+  },
+  "now": {
+    "title": "What I'm doing right now.",
+    "updated": "Updated {month} {year}"
+  },
+  "work": {
+    "title": "Selected work.",
+    "count": "{n} projects · 2024 — 2026",
+    "viewProject": "View project",
+    "back": "Back to work",
+    "next": "Next",
+    "prev": "Previous",
+    "context": "Context",
+    "architecture": "Architecture",
+    "process": "Process",
+    "outcome": "Outcome",
+    "timeline": "Timeline",
+    "role": "Role",
+    "team": "Team",
+    "contextLabel": "Context"
+  },
+  "research": {
+    "title": "On the questions I want to spend my career on.",
+    "refs": "References"
+  },
+  "trajectory": {
+    "title": "The plan, honestly stated.",
+    "current": "Current"
+  },
+  "contact": {
+    "title": "Let's talk.",
+    "reachOut": "Reach out",
+    "blurb": "Open to ML research collaborations, full-stack contracts, and quiet conversations about the path between them.",
+    "follow": "Follow"
+  },
+  "footer": {
+    "built": "Built with intent.",
+    "viewSource": "View source"
+  },
+  "status": {
+    "BUILDING": "Building",
+    "SHIPPED": "Shipped",
+    "LEARNING": "Learning",
+    "STUDYING": "Studying",
+    "ESSAY": "Essay"
+  },
+  "locale": {
+    "switch": "FR"
+  }
+}
