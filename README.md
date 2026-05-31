@@ -33,6 +33,40 @@ Then open:
 - Public site → http://localhost:3000/en
 - Admin → http://localhost:3000/admin/login (use ADMIN_EMAIL / ADMIN_PASSWORD from `.env.local`)
 
+## Run with Docker
+
+Both flavors ship Postgres in the same stack, so there's nothing to install or seed by hand — just Docker.
+
+### Development (hot reload)
+
+```bash
+docker compose up --build
+```
+
+Postgres comes up, the app runs `prisma migrate deploy` + `db:seed`, then starts `next dev` (Turbopack). Your source is bind-mounted, so edits hot-reload. Data persists in the `pgdata` volume.
+
+- Public → http://localhost:3000/en
+- Admin → http://localhost:3000/admin/login
+
+Stop with `docker compose down` (add `-v` to also wipe the database).
+
+### Production (optimized standalone image)
+
+```bash
+./docker/prod.sh
+```
+
+This builds the multi-stage [Dockerfile](Dockerfile) into a minimal standalone runtime image (`output: 'standalone'`). Because the public pages are statically prerendered from Postgres, the script brings the database **up and seeds it before building**, then starts the app:
+
+`db → migrate + seed → build → start`. Re-run the script to rebuild after code changes; `docker compose -f docker-compose.prod.yml down` to stop.
+
+> The build reaches the seeded database through `host.docker.internal:5432`. If your Docker setup can't resolve that, override it: `BUILD_DATABASE_URL=postgresql://... ./docker/prod.sh`.
+
+### Notes
+
+- Credentials come from `.env` (`NEXTAUTH_SECRET`, `ADMIN_*`…); `DATABASE_URL` is overridden to the in-stack `db` service automatically.
+- pnpm's allowed build scripts (Prisma, sharp, esbuild) are whitelisted in [pnpm-workspace.yaml](pnpm-workspace.yaml) — without it, pnpm v11 aborts `install` with `ERR_PNPM_IGNORED_BUILDS` (this also fixes a bare `pnpm dev`/`pnpm install` on the host).
+
 ## Database
 
 PostgreSQL. For dev:
