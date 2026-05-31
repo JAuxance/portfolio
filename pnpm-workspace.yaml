@@ -1,0 +1,10 @@
+# pnpm v11 reads project settings from here (no longer the "pnpm" field in package.json).
+# Allow these dependencies to run install/build scripts, otherwise pnpm aborts
+# `install` with ERR_PNPM_IGNORED_BUILDS.
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  esbuild: true
+  prisma: true
+  sharp: true
+  unrs-resolver: true
