@@ -1,0 +1,30 @@
+# Dependencies & build output — reinstalled/rebuilt inside the image
+node_modules
+.next
+out
+build
+dist
+
+# Secrets & local env — injected at runtime via env_file / environment
+.env
+.env.local
+.env*.local
+
+# Docker / tooling
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+docker/
+
+# VCS & editor
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+
+# Logs & TS build info
+*.log
+npm-debug.log*
+*.tsbuildinfo
+next-env.d.ts
