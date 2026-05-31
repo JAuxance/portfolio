@@ -1,0 +1,71 @@
+name: portfolio-prod
+
+# Production-mode stack: Postgres + migrate/seed + the standalone Next.js image.
+#
+# The image build prerenders DB-backed pages, so the database must be up & seeded
+# BEFORE `app` is built. Run it the easy way:
+#
+#     ./docker/prod.sh
+#
+# (which brings up db → migrates+seeds → builds → starts app, in order)
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pw
+      POSTGRES_DB: portfolio
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d portfolio"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # One-shot: applies migrations + seeds. Reuses the `deps` stage (it already has
+  # the Prisma CLI, the generated client, tsx and the seed script).
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:pw@db:5432/portfolio
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "node_modules/.bin/prisma migrate deploy &&
+             node_modules/.bin/tsx prisma/seed.ts"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+      # next build needs to reach the (already-seeded) Postgres published on the
+      # host. host-gateway makes host.docker.internal resolve on Linux & Desktop.
+      args:
+        DATABASE_URL: ${BUILD_DATABASE_URL:-postgresql://postgres:pw@host.docker.internal:5432/portfolio}
+      extra_hosts:
+        - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://postgres:pw@db:5432/portfolio
+    ports:
+      - "3000:3000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  pgdata:
