@@ -11,7 +11,7 @@ export function NowCard({ item, locale }: NowCardProps) {
   const body = locale === 'fr' ? item.bodyFr : item.bodyEn;
 
   return (
-    <GlassCard className="flex h-full flex-col gap-5">
+    <GlassCard noBreathe className="flex h-full flex-col gap-5">
       <span
         className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]"
         style={{ fontFamily: 'var(--font-mono)' }}
@@ -25,14 +25,6 @@ export function NowCard({ item, locale }: NowCardProps) {
         {title}
       </h3>
       <p className="text-[13px] leading-[1.6] text-[var(--color-text-secondary)]">{body}</p>
-      <div className="mt-auto pt-5 border-t border-[var(--color-glass-border)]">
-        <p
-          className="font-mono text-[11px] text-[var(--color-text-tertiary)] tracking-wide"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          {item.stack}
-        </p>
-      </div>
     </GlassCard>
   );
 }

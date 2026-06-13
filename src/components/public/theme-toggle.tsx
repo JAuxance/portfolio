@@ -15,11 +15,14 @@ export function ThemeToggle() {
       title={isDark ? 'Light mode' : 'Dark mode'}
       className="relative inline-flex h-7 w-12 items-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass-fill)] backdrop-blur-sm transition-colors hover:border-[var(--color-glass-border-hover)]"
     >
+      {/* Animate via transform (x), not the `layout` prop: layout measures
+          page-relative positions, so route changes made the thumb "travel"
+          from its old scroll position — a vertical ghost slide. */}
       <motion.span
-        layout
+        initial={false}
+        animate={{ x: isDark ? 0 : 22 }}
         transition={{ type: 'spring', stiffness: 600, damping: 38 }}
-        className="absolute top-[3px] grid h-[20px] w-[20px] place-items-center rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] shadow-sm"
-        style={{ left: isDark ? 3 : 25 }}
+        className="absolute left-[3px] top-[3px] grid h-[20px] w-[20px] place-items-center rounded-full bg-[var(--color-text-primary)] text-[var(--color-bg)] shadow-sm"
       >
         {isDark ? <MoonIcon /> : <SunIcon />}
       </motion.span>

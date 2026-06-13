@@ -10,10 +10,12 @@ interface TimelineProps {
 export function Timeline({ stations, locale, currentLabel }: TimelineProps) {
   return (
     <div className="relative pl-[30px] md:pl-[40px] lg:pl-[48px]">
-      {/* vertical line */}
+      {/* vertical line — the dot wrappers are 24px boxes anchored at the
+          container's left edge, so the dots' center is always 12px in.
+          11.5px + 1px width centers the line under them at every breakpoint. */}
       <div
         aria-hidden
-        className="absolute top-1.5 bottom-1.5 left-[7px] md:left-[10px] lg:left-[14px] w-px bg-[var(--color-glass-border)]"
+        className="absolute top-1.5 bottom-1.5 left-[11.5px] w-px bg-[var(--color-glass-border)]"
       />
       <ol className="flex flex-col gap-12 md:gap-14">
         {stations.map((s) => {

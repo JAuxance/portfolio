@@ -156,6 +156,23 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  /* Slow idle "breathing" for cards — lives on a wrapper so it never fights
+     the framer-motion transforms (reveal, hover lift, tilt) on the card
+     itself. Killed by the global prefers-reduced-motion override below. */
+  .card-breathe {
+    animation: card-breathe 6s var(--ease-in-out) infinite;
+    will-change: transform;
+  }
+}
+
+@keyframes card-breathe {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) scale(1.012);
+  }
 }
 
 @media (max-width: 768px) {
