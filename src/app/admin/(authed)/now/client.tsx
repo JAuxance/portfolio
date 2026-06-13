@@ -139,7 +139,7 @@ export function NowAdminClient({ initialItems }: { initialItems: NowItem[] }) {
             <Field label="Label" hint="BUILDING / LEARNING / STUDYING">
               <Input value={selected.label} onChange={(e) => updateLocal(selected.id, { label: e.target.value })} onBlur={() => save(selected)} />
             </Field>
-            <Field label="Stack">
+            <Field label="Stack" hint="Not shown on the site — feeds Heather">
               <Input value={selected.stack} onChange={(e) => updateLocal(selected.id, { stack: e.target.value })} onBlur={() => save(selected)} />
             </Field>
             <Field label="Published">

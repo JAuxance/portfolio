@@ -19,6 +19,7 @@
  */
 
 import { db } from './db';
+import { substackHomeUrl, substackConfigured } from './substack';
 
 export type HeatherLocale = 'en' | 'fr';
 export type HeatherMessage = { role: 'user' | 'assistant'; content: string };
@@ -48,6 +49,12 @@ export async function buildSiteContext({ locale }: BuildContextOptions): Promise
     lines.push(`# ${profile.name} (${profile.handle})`, `Email: ${profile.emailPublic}`, '');
     lines.push('## Abstract', pick(profile.abstractEn, profile.abstractFr), '');
     lines.push('## Contact blurb', pick(profile.contactBlurbEn, profile.contactBlurbFr));
+    // Pillar links — so Heather routes visitors to the same canonical homes
+    // the page's information architecture defines.
+    lines.push('', '## Links');
+    if (profile.github) lines.push(`- GitHub (all code): ${profile.github}`);
+    if (substackConfigured) lines.push(`- Journal (Substack, PhD-road log): ${substackHomeUrl}`);
+    lines.push(`- Email: ${profile.emailPublic}`);
   }
   if (now.length) {
     lines.push('', '## Right now');
@@ -112,8 +119,8 @@ export async function* streamHeatherReply(
 ): AsyncGenerator<string, void, unknown> {
   const placeholder =
     opts.locale === 'fr'
-      ? `Je suis Heather, mais Auxance ne m'a pas encore connectée à un modèle. En attendant : tu peux explorer les sections **Now**, **Work**, **Research** et **Trajectory** plus bas — tout y est. Et pour les questions précises, l'email dans **Contact** marche très bien.`
-      : `I'm Heather, but Auxance hasn't wired me up to a model yet. In the meantime: the **Now**, **Work**, **Research**, and **Trajectory** sections below have everything. For specific questions, the email in **Contact** is the fastest route.`;
+      ? `Je suis Heather, mais Auxance ne m'a pas encore connectée à un modèle. En attendant : tu peux explorer les sections **Now**, **Journal** et **Work** plus bas — tout y est. Et pour les questions précises, l'email dans **Contact** marche très bien.`
+      : `I'm Heather, but Auxance hasn't wired me up to a model yet. In the meantime: the **Now**, **Journal**, and **Work** sections below have everything. For specific questions, the email in **Contact** is the fastest route.`;
 
   // Type out the placeholder so the streaming UI feels real.
   const words = placeholder.split(/(\s+)/);

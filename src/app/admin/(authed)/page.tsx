@@ -13,12 +13,12 @@ export default async function AdminDashboard() {
   const lastProject = await db.project.findFirst({ orderBy: { updatedAt: 'desc' } });
 
   const cards = [
-    { href: '/admin/profile', label: 'Profile', value: 'Singleton' },
+    { href: '/admin/profile', label: 'Profile', value: 'Singleton' as const },
     { href: '/admin/now', label: 'Now items', value: nowItems },
     { href: '/admin/work', label: 'Projects', value: projects },
-    { href: '/admin/research', label: 'Research topics', value: research },
-    { href: '/admin/references', label: 'References', value: references },
-    { href: '/admin/trajectory', label: 'Trajectory stations', value: stations },
+    { href: '/admin/research', label: 'Research · Heather', value: research },
+    { href: '/admin/references', label: 'References · Heather', value: references },
+    { href: '/admin/trajectory', label: 'Trajectory · Heather', value: stations },
   ];
 
   return (

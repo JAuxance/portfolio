@@ -18,13 +18,22 @@ interface NavItem {
   key: CountKey | null;
 }
 
+// Mirrors the public site: Hero/Now/Journal/Work/Contact are the live
+// sections; Research/References/Trajectory no longer render on the page but
+// still feed Heather's chat context, so they stay editable under their own
+// group. (The Journal section is Substack-driven — nothing to edit here.)
 const groups: { label: string; items: NavItem[] }[] = [
   {
-    label: 'CONTENT',
+    label: 'ON THE SITE',
     items: [
       { href: '/admin/profile', label: 'Profile', key: null },
       { href: '/admin/now', label: 'Now', key: 'now' },
       { href: '/admin/work', label: 'Work', key: 'work' },
+    ],
+  },
+  {
+    label: 'HEATHER CONTEXT',
+    items: [
       { href: '/admin/research', label: 'Research', key: 'research' },
       { href: '/admin/references', label: 'References', key: 'references' },
       { href: '/admin/trajectory', label: 'Trajectory', key: 'trajectory' },

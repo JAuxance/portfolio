@@ -6,6 +6,8 @@ import { ProjectStatus } from '@prisma/client';
 import { Button, Input, Textarea, Field, Label, Toggle } from './ui';
 import { StatusDropdown } from './status-dropdown';
 import { StackTagInput } from './stack-tag-input';
+import { MediaDrop } from './media-drop';
+import { isVideoUrl } from '@/lib/media';
 import { useSaveState } from './save-state-context';
 import { updateProject, deleteProject, toggleFeatured, togglePublished } from '@/actions/projects';
 import { cn } from '@/lib/cn';
@@ -32,36 +34,40 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  async function save() {
+  // `overrides` carries values set in the same tick as the save call —
+  // React state updates haven't landed yet, so reading `form` alone would
+  // persist the previous value (stale closure).
+  async function save(overrides: Partial<ReturnType<typeof projectToForm>> = {}) {
+    const f = { ...form, ...overrides };
     startTransition(async () => {
       try {
         setSaving();
         await updateProject(project.id, {
-          slug: form.slug,
-          nameEn: form.nameEn,
-          nameFr: form.nameFr,
-          taglineEn: form.taglineEn,
-          taglineFr: form.taglineFr,
-          status: form.status,
-          stack: form.stack,
-          liveUrl: form.liveUrl,
-          repoUrl: form.repoUrl,
-          featured: form.featured,
-          published: form.published,
-          contextEn: form.contextEn,
-          contextFr: form.contextFr,
-          architecture: form.architecture,
-          decisions: form.decisions,
-          lessons: form.lessons,
-          heroImage: form.heroImage,
-          timelineEn: form.timelineEn,
-          timelineFr: form.timelineFr,
-          roleEn: form.roleEn,
-          roleFr: form.roleFr,
-          teamEn: form.teamEn,
-          teamFr: form.teamFr,
-          contextLabelEn: form.contextLabelEn,
-          contextLabelFr: form.contextLabelFr,
+          slug: f.slug,
+          nameEn: f.nameEn,
+          nameFr: f.nameFr,
+          taglineEn: f.taglineEn,
+          taglineFr: f.taglineFr,
+          status: f.status,
+          stack: f.stack,
+          liveUrl: f.liveUrl,
+          repoUrl: f.repoUrl,
+          featured: f.featured,
+          published: f.published,
+          contextEn: f.contextEn,
+          contextFr: f.contextFr,
+          architecture: f.architecture,
+          decisions: f.decisions,
+          lessons: f.lessons,
+          heroImage: f.heroImage,
+          timelineEn: f.timelineEn,
+          timelineFr: f.timelineFr,
+          roleEn: f.roleEn,
+          roleFr: f.roleFr,
+          teamEn: f.teamEn,
+          teamFr: f.teamFr,
+          contextLabelEn: f.contextLabelEn,
+          contextLabelFr: f.contextLabelFr,
         });
         setSaved();
       } catch (e) {
@@ -145,10 +151,10 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
         <div className="flex flex-col gap-5">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_220px_180px]">
             <Field label="Project name (EN)">
-              <Input value={form.nameEn} onChange={(e) => update('nameEn', e.target.value)} onBlur={save} />
+              <Input value={form.nameEn} onChange={(e) => update('nameEn', e.target.value)} onBlur={() => save()} />
             </Field>
             <Field label="Status">
-              <StatusDropdown value={form.status} onChange={(s) => { update('status', s); save(); }} />
+              <StatusDropdown value={form.status} onChange={(s) => { update('status', s); save({ status: s }); }} />
             </Field>
             <Field label="Featured in bento">
               <div className="flex h-10 items-center">
@@ -159,10 +165,10 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="Project name (FR)">
-              <Input value={form.nameFr} onChange={(e) => update('nameFr', e.target.value)} onBlur={save} />
+              <Input value={form.nameFr} onChange={(e) => update('nameFr', e.target.value)} onBlur={() => save()} />
             </Field>
             <Field label="Slug" hint="The URL path: /work/<slug>">
-              <Input value={form.slug} onChange={(e) => update('slug', e.target.value)} onBlur={save} />
+              <Input value={form.slug} onChange={(e) => update('slug', e.target.value)} onBlur={() => save()} />
             </Field>
           </div>
 
@@ -172,7 +178,7 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
                 rows={3}
                 value={form.taglineEn}
                 onChange={(e) => update('taglineEn', e.target.value)}
-                onBlur={save}
+                onBlur={() => save()}
               />
             </Field>
             <Field label="Tagline (FR)">
@@ -180,13 +186,13 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
                 rows={3}
                 value={form.taglineFr}
                 onChange={(e) => update('taglineFr', e.target.value)}
-                onBlur={save}
+                onBlur={() => save()}
               />
             </Field>
           </div>
 
-          <Field label="Tech stack">
-            <StackTagInput value={form.stack} onChange={(s) => { update('stack', s); save(); }} />
+          <Field label="Tech stack" hint="Not shown on cards — feeds Heather">
+            <StackTagInput value={form.stack} onChange={(s) => { update('stack', s); save({ stack: s }); }} />
           </Field>
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_280px]">
@@ -213,7 +219,7 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
                 placeholder="https://"
                 value={form.liveUrl ?? ''}
                 onChange={(e) => update('liveUrl', e.target.value)}
-                onBlur={save}
+                onBlur={() => save()}
               />
             </Field>
           </div>
@@ -224,7 +230,7 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
                 placeholder="https://github.com/..."
                 value={form.repoUrl ?? ''}
                 onChange={(e) => update('repoUrl', e.target.value)}
-                onBlur={save}
+                onBlur={() => save()}
               />
             </Field>
             <Field label="Published">
@@ -246,7 +252,7 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
               rows={6}
               value={form.contextEn.join('\n\n')}
               onChange={(e) => update('contextEn', e.target.value.split('\n\n').filter(Boolean))}
-              onBlur={save}
+              onBlur={() => save()}
             />
           </Field>
           <Field label="Context (FR) — one paragraph per line">
@@ -254,53 +260,74 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
               rows={6}
               value={form.contextFr.join('\n\n')}
               onChange={(e) => update('contextFr', e.target.value.split('\n\n').filter(Boolean))}
-              onBlur={save}
+              onBlur={() => save()}
             />
           </Field>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Field label="Timeline (EN)">
-              <Input value={form.timelineEn ?? ''} onChange={(e) => update('timelineEn', e.target.value)} onBlur={save} />
+              <Input value={form.timelineEn ?? ''} onChange={(e) => update('timelineEn', e.target.value)} onBlur={() => save()} />
             </Field>
             <Field label="Timeline (FR)">
-              <Input value={form.timelineFr ?? ''} onChange={(e) => update('timelineFr', e.target.value)} onBlur={save} />
+              <Input value={form.timelineFr ?? ''} onChange={(e) => update('timelineFr', e.target.value)} onBlur={() => save()} />
             </Field>
             <Field label="Role (EN)">
-              <Input value={form.roleEn ?? ''} onChange={(e) => update('roleEn', e.target.value)} onBlur={save} />
+              <Input value={form.roleEn ?? ''} onChange={(e) => update('roleEn', e.target.value)} onBlur={() => save()} />
             </Field>
             <Field label="Role (FR)">
-              <Input value={form.roleFr ?? ''} onChange={(e) => update('roleFr', e.target.value)} onBlur={save} />
+              <Input value={form.roleFr ?? ''} onChange={(e) => update('roleFr', e.target.value)} onBlur={() => save()} />
             </Field>
             <Field label="Team (EN)">
-              <Input value={form.teamEn ?? ''} onChange={(e) => update('teamEn', e.target.value)} onBlur={save} />
+              <Input value={form.teamEn ?? ''} onChange={(e) => update('teamEn', e.target.value)} onBlur={() => save()} />
             </Field>
             <Field label="Team (FR)">
-              <Input value={form.teamFr ?? ''} onChange={(e) => update('teamFr', e.target.value)} onBlur={save} />
+              <Input value={form.teamFr ?? ''} onChange={(e) => update('teamFr', e.target.value)} onBlur={() => save()} />
             </Field>
             <Field label="Context label (EN)">
               <Input
                 value={form.contextLabelEn ?? ''}
                 onChange={(e) => update('contextLabelEn', e.target.value)}
-                onBlur={save}
+                onBlur={() => save()}
               />
             </Field>
             <Field label="Context label (FR)">
               <Input
                 value={form.contextLabelFr ?? ''}
                 onChange={(e) => update('contextLabelFr', e.target.value)}
-                onBlur={save}
+                onBlur={() => save()}
               />
             </Field>
           </div>
-          <JsonField label="Architecture (JSON)" value={form.architecture} onChange={(v) => { update('architecture', v); save(); }} placeholder='[{"layer":"Frontend","primary":"Next.js","notesEn":"...","notesFr":"..."}]' />
-          <JsonField label="Decisions (JSON)" value={form.decisions} onChange={(v) => { update('decisions', v); save(); }} placeholder='[{"n":"01","titleEn":"...","titleFr":"...","bodyEn":"...","bodyFr":"..."}]' />
-          <JsonField label="Lessons (JSON)" value={form.lessons} onChange={(v) => { update('lessons', v); save(); }} placeholder='[{"label":"TECHNICAL","textEn":"...","textFr":"..."}]' />
+          <JsonField label="Architecture (JSON)" value={form.architecture} onChange={(v) => { update('architecture', v); save({ architecture: v }); }} placeholder='[{"layer":"Frontend","primary":"Next.js","notesEn":"...","notesFr":"..."}]' />
+          <JsonField label="Decisions (JSON)" value={form.decisions} onChange={(v) => { update('decisions', v); save({ decisions: v }); }} placeholder='[{"n":"01","titleEn":"...","titleFr":"...","bodyEn":"...","bodyFr":"..."}]' />
+          <JsonField label="Lessons (JSON)" value={form.lessons} onChange={(v) => { update('lessons', v); save({ lessons: v }); }} placeholder='[{"label":"TECHNICAL","textEn":"...","textFr":"..."}]' />
         </div>
       )}
 
       {tab === 'visual' && (
         <div className="flex flex-col gap-5">
-          <Field label="Hero image URL" hint="Vercel Blob / Cloudinary URL. Leave empty for the placeholder mockup.">
-            <Input value={form.heroImage ?? ''} onChange={(e) => update('heroImage', e.target.value)} onBlur={save} />
+          <Field label="Hero media" hint="Shown in the browser mockup on the project page.">
+            <MediaDrop
+              onUploaded={(url) => {
+                update('heroImage', url);
+                save({ heroImage: url });
+              }}
+            />
+          </Field>
+          {form.heroImage && (
+            <div className="flex flex-col gap-2">
+              <Label>Preview</Label>
+              <div className="overflow-hidden rounded-xl border border-white/[0.08]">
+                {isVideoUrl(form.heroImage) ? (
+                  <video src={form.heroImage} className="max-h-[280px] w-full object-cover" autoPlay loop muted playsInline />
+                ) : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form.heroImage} alt="Hero preview" className="max-h-[280px] w-full object-cover" />
+                )}
+              </div>
+            </div>
+          )}
+          <Field label="…or paste a URL" hint="External URL (Vercel Blob / Cloudinary) or /uploads/… path. Clear to fall back to the placeholder mockup.">
+            <Input value={form.heroImage ?? ''} onChange={(e) => update('heroImage', e.target.value)} onBlur={() => save()} />
           </Field>
         </div>
       )}
@@ -319,7 +346,7 @@ export function ProjectEditPanel({ project, onClose, onDeleted }: ProjectEditPan
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button variant="primary" onClick={save} disabled={pending}>
+          <Button variant="primary" onClick={() => save()} disabled={pending}>
             {pending ? 'Saving…' : 'Save changes'}
           </Button>
         </div>
