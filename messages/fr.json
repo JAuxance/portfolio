@@ -1,8 +1,7 @@
 {
   "nav": {
     "work": "Travaux",
-    "research": "Recherche",
-    "now": "Maintenant",
+    "journal": "Journal",
     "contact": "Contact"
   },
   "hero": {
@@ -13,15 +12,18 @@
     "more": "Plus",
     "less": "Moins",
     "heatherLabel": "Heather · Assistante IA",
-    "heatherThinking": "Heather réfléchit…"
+    "heatherThinking": "Heather réfléchit…",
+    "greeting": "Hey toi.",
+    "hubJournal": "Journal · Substack",
+    "hubCode": "Code · GitHub",
+    "hubContact": "Contact",
+    "hubAria": "Piliers du site"
   },
   "now": {
-    "title": "Ce que je fais en ce moment.",
-    "updated": "Mise à jour {month} {year}"
+    "title": "Ce que je fais en ce moment."
   },
   "work": {
     "title": "Travaux sélectionnés.",
-    "count": "{n} projets · 2024 — 2026",
     "viewProject": "Voir le projet",
     "back": "Retour aux travaux",
     "next": "Suivant",
@@ -33,24 +35,26 @@
     "timeline": "Calendrier",
     "role": "Rôle",
     "team": "Équipe",
-    "contextLabel": "Contexte"
+    "contextLabel": "Contexte",
+    "code": "Code",
+    "live": "Démo",
+    "allCode": "Tout le code · GitHub"
   },
-  "research": {
-    "title": "Sur les questions auxquelles je veux consacrer ma carrière.",
-    "refs": "Références"
-  },
-  "trajectory": {
-    "title": "Le plan, dit honnêtement.",
-    "current": "Actuel"
+  "journal": {
+    "title": "Notes de route vers le doctorat.",
+    "via": "Substack",
+    "emptyLabel": "Bientôt",
+    "empty": "La première entrée s'écrit en ce moment.",
+    "subscribe": "S'abonner sur Substack"
   },
   "contact": {
     "title": "On se parle.",
-    "reachOut": "Me contacter",
     "blurb": "Ouvert aux collaborations de recherche ML, aux contrats full-stack, et aux conversations posées sur le chemin entre les deux.",
-    "follow": "Suivre"
+    "follow": "Suivre",
+    "copy": "Copier l'email",
+    "copied": "Copié"
   },
   "footer": {
-    "built": "Construit avec intention.",
     "viewSource": "Voir la source"
   },
   "status": {

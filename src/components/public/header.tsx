@@ -28,17 +28,19 @@ export function Header() {
       <div className="mx-auto flex max-w-[1440px] items-center justify-between px-6 md:px-10 lg:px-20 h-[60px]">
         <Link
           href={`/${locale}`}
-          className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--color-text-primary)]"
+          className="inline-flex items-center gap-1.5 text-[14px] font-semibold tracking-[-0.01em] text-[var(--color-text-primary)]"
           style={{ fontFamily: 'var(--font-mono)' }}
         >
-          Auxance
-          <span className="ml-1 inline-block h-1.5 w-1.5 translate-y-[-2px] rounded-full bg-[var(--color-text-primary)] shadow-[0_0_8px_currentColor] opacity-70" />
+          Auxance · Hub
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--color-text-primary)] shadow-[0_0_8px_currentColor] opacity-70" />
         </Link>
 
+        {/* Internal anchors only — the header never links off-site. Order
+            mirrors the scroll order; Now is omitted (it sits right under
+            the hero, the first scroll reveals it). */}
         <nav className="hidden items-center gap-8 md:flex">
+          <NavLink href={`/${locale}#journal`}>{t('journal')}</NavLink>
           <NavLink href={`/${locale}#work`}>{t('work')}</NavLink>
-          <NavLink href={`/${locale}#research`}>{t('research')}</NavLink>
-          <NavLink href={`/${locale}#now`}>{t('now')}</NavLink>
           <NavLink href={`/${locale}#contact`}>{t('contact')}</NavLink>
         </nav>
 

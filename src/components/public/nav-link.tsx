@@ -17,7 +17,7 @@ export function NavLink({ href, children, className, external }: NavLinkProps) {
       <a
         href={href}
         target="_blank"
-        rel="noreferrer"
+        rel="noopener noreferrer"
         className={cn(
           'text-[13px] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]',
           className

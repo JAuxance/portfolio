@@ -1,8 +1,7 @@
 {
   "nav": {
     "work": "Work",
-    "research": "Research",
-    "now": "Now",
+    "journal": "Journal",
     "contact": "Contact"
   },
   "hero": {
@@ -13,15 +12,18 @@
     "more": "More",
     "less": "Less",
     "heatherLabel": "Heather · AI assistant",
-    "heatherThinking": "Heather is thinking…"
+    "heatherThinking": "Heather is thinking…",
+    "greeting": "Hey you.",
+    "hubJournal": "Journal · Substack",
+    "hubCode": "Code · GitHub",
+    "hubContact": "Contact",
+    "hubAria": "Site pillars"
   },
   "now": {
-    "title": "What I'm doing right now.",
-    "updated": "Updated {month} {year}"
+    "title": "What I'm doing right now."
   },
   "work": {
     "title": "Selected work.",
-    "count": "{n} projects · 2024 — 2026",
     "viewProject": "View project",
     "back": "Back to work",
     "next": "Next",
@@ -33,24 +35,26 @@
     "timeline": "Timeline",
     "role": "Role",
     "team": "Team",
-    "contextLabel": "Context"
+    "contextLabel": "Context",
+    "code": "Code",
+    "live": "Live",
+    "allCode": "All code · GitHub"
   },
-  "research": {
-    "title": "On the questions I want to spend my career on.",
-    "refs": "References"
-  },
-  "trajectory": {
-    "title": "The plan, honestly stated.",
-    "current": "Current"
+  "journal": {
+    "title": "Road notes toward the PhD.",
+    "via": "Substack",
+    "emptyLabel": "Coming soon",
+    "empty": "The first entry is being written.",
+    "subscribe": "Subscribe on Substack"
   },
   "contact": {
     "title": "Let's talk.",
-    "reachOut": "Reach out",
     "blurb": "Open to ML research collaborations, full-stack contracts, and quiet conversations about the path between them.",
-    "follow": "Follow"
+    "follow": "Follow",
+    "copy": "Copy email",
+    "copied": "Copied"
   },
   "footer": {
-    "built": "Built with intent.",
     "viewSource": "View source"
   },
   "status": {

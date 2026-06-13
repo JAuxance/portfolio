@@ -11,12 +11,12 @@ export async function Footer() {
           className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)]"
           style={{ fontFamily: 'var(--font-mono)' }}
         >
-          © {year} · Auxance Jourdan · {t('built')}
+          © {year} · Auxance Jourdan
         </p>
         <a
-          href="https://github.com/auxance/portfolio"
+          href="https://github.com/JAuxance/portfolio"
           target="_blank"
-          rel="noreferrer"
+          rel="noopener noreferrer"
           className="font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
           style={{ fontFamily: 'var(--font-mono)' }}
         >
