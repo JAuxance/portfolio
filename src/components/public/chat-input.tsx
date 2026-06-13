@@ -25,7 +25,20 @@ export function ChatInput({ placeholder, className }: ChatInputProps) {
   const [streaming, setStreaming] = useState(false);
   const [pendingAssistant, setPendingAssistant] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [greeting, setGreeting] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Heather says hi on arrival: the orb wakes up after the hero reveal,
+  // pops a small speech bubble, then tucks it back in. Dismissed early the
+  // moment the visitor engages with the input.
+  useEffect(() => {
+    const show = setTimeout(() => setGreeting(true), 1400);
+    const hide = setTimeout(() => setGreeting(false), 4800);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+    };
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -152,13 +165,45 @@ export function ChatInput({ placeholder, className }: ChatInputProps) {
         className="glass glass-hover flex w-full items-center gap-3 rounded-2xl pl-5 pr-2 py-2 transition-colors"
         style={{ borderRadius: 16 }}
       >
-        <HeatherLogo size={22} animated={streaming} className="shrink-0" />
+        <div className="relative shrink-0">
+          <motion.div
+            animate={
+              greeting && !reduced
+                ? { scale: [1, 0.78, 1.2, 0.94, 1], rotate: [0, -10, 8, -3, 0] }
+                : { scale: 1, rotate: 0 }
+            }
+            transition={{ duration: 1.1, ease: 'easeInOut' }}
+          >
+            <HeatherLogo size={22} animated={streaming || greeting} />
+          </motion.div>
+          <AnimatePresence>
+            {greeting && (
+              <motion.div
+                initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.2, y: 6 }}
+                animate={
+                  reduced
+                    ? { opacity: 1 }
+                    : { opacity: 1, scale: 1, y: 0, transition: { delay: 0.45, duration: 0.5, ease: [0.32, 0.72, 0, 1] } }
+                }
+                exit={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.2, y: 6, transition: { duration: 0.3 } }}
+                className="glass-thin absolute bottom-full right-0 z-10 mb-3 origin-bottom-right whitespace-nowrap rounded-2xl rounded-br-md px-3.5 py-2 text-[13px] text-[var(--color-text-primary)]"
+                style={{
+                  boxShadow: 'var(--shadow-card)',
+                  background: 'color-mix(in srgb, var(--color-bg-elevated) 88%, transparent)',
+                }}
+              >
+                {t('greeting')}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         <input
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={placeholder}
           disabled={streaming}
+          onFocus={() => setGreeting(false)}
           className="flex-1 bg-transparent py-3 text-[15px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none disabled:opacity-60"
         />
         <ArrowButton size={36} ariaLabel="Send" />
