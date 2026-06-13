@@ -3,8 +3,11 @@ import Link from 'next/link';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { db } from '@/lib/db';
 import { locales } from '@/lib/i18n-config';
+import { isVideoUrl } from '@/lib/media';
 import { StatusPill } from '@/components/public/status-pill';
 import { GlassCard } from '@/components/public/glass-card';
+import { BuildIn } from '@/components/public/build-in';
+import { CtaPill } from '@/components/public/section-cta';
 import type { ArchitectureLayer, Decision, Lesson } from '@/types/content';
 
 interface PageProps {
@@ -48,43 +51,70 @@ export default async function ProjectPage({ params }: PageProps) {
 
   return (
     <>
-      {/* Hero */}
+      {/* Hero — each block "builds" in sequence; keyed by slug so swapping
+          projects (Prev/Next) replays the construction. */}
       <section className="mx-auto max-w-[1280px] px-6 pt-[120px] pb-12 md:px-12 md:pt-[140px] lg:px-20">
-        <Link
-          href={`/${locale}#work`}
-          className="mb-10 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] hover:text-white"
-          style={{ fontFamily: 'var(--font-mono)' }}
-        >
-          ← {t('back')}
-        </Link>
+        <BuildIn key={`${slug}-back`} index={0}>
+          <Link
+            href={`/${locale}#work`}
+            className="mb-10 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            ← {t('back')}
+          </Link>
+        </BuildIn>
 
-        <div className="mb-6 flex items-center gap-4">
+        <BuildIn key={`${slug}-status`} index={1} className="mb-6 flex items-center gap-4">
           <StatusPill status={project.status} locale={loc} withPill />
-        </div>
+        </BuildIn>
 
-        <h1
-          className="mb-6 text-[40px] md:text-[60px] lg:text-[76px] font-semibold leading-[1.02] text-[var(--color-text-primary)]"
-          style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
-        >
-          {name}
-        </h1>
-        <p
-          className="mb-14 max-w-[800px] text-[18px] md:text-[22px] leading-[1.45] text-[var(--color-text-secondary)]"
-          style={{ letterSpacing: '-0.015em' }}
-        >
-          {tagline}
-        </p>
+        <BuildIn key={`${slug}-name`} index={2}>
+          <h1
+            className="mb-6 text-[40px] md:text-[60px] lg:text-[76px] font-semibold leading-[1.02] text-[var(--color-text-primary)]"
+            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
+          >
+            {name}
+          </h1>
+        </BuildIn>
 
-        <div className="grid grid-cols-2 gap-6 border-t border-[var(--color-glass-border)] pt-6 md:grid-cols-4 md:gap-8">
+        <BuildIn key={`${slug}-tagline`} index={3}>
+          <p
+            className="max-w-[800px] text-[18px] md:text-[22px] leading-[1.45] text-[var(--color-text-secondary)]"
+            style={{ letterSpacing: '-0.015em' }}
+          >
+            {tagline}
+          </p>
+        </BuildIn>
+
+        {(project.repoUrl || project.liveUrl) && (
+          <BuildIn key={`${slug}-actions`} index={4} className="mt-8 flex flex-wrap items-center gap-3">
+            {/* The rarer destination gets the solid pill; the other stays glass. */}
+            {project.liveUrl ? (
+              <>
+                <CtaPill href={project.liveUrl} label={t('live')} variant="solid" />
+                {project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="glass" />}
+              </>
+            ) : (
+              project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="solid" />
+            )}
+          </BuildIn>
+        )}
+
+        <BuildIn
+          key={`${slug}-meta`}
+          index={5}
+          className="mt-14 grid grid-cols-2 gap-6 border-t border-[var(--color-glass-border)] pt-6 md:grid-cols-4 md:gap-8"
+        >
           <MetaCol label={t('timeline')} value={timeline ?? '—'} />
           <MetaCol label={t('role')} value={role ?? '—'} />
           <MetaCol label={t('team')} value={team ?? '—'} />
           <MetaCol label={t('contextLabel')} value={contextLabel ?? '—'} />
-        </div>
+        </BuildIn>
       </section>
 
       {/* Browser mockup */}
       <section className="mx-auto max-w-[1280px] px-6 md:px-12 lg:px-20">
+        <BuildIn key={`${slug}-mockup`} index={6}>
         <div className="glass overflow-hidden" style={{ borderRadius: 20 }}>
           <div className="flex items-center gap-2 border-b border-[var(--color-glass-border)] px-4 py-3">
             <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-text-tertiary)] opacity-50" />
@@ -94,22 +124,42 @@ export default async function ProjectPage({ params }: PageProps) {
               <span>auxance.dev/work/{project.slug}</span>
             </span>
           </div>
-          <div
-            className="grid h-[280px] place-items-center md:h-[480px] lg:h-[600px]"
-            style={{
-              background:
-                'radial-gradient(circle at 30% 20%, rgba(140,178,255,0.12), transparent 50%), radial-gradient(circle at 70% 80%, rgba(191,140,255,0.10), transparent 50%)',
-            }}
-          >
-            <span className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
-              Demo placeholder
-            </span>
-          </div>
+          {project.heroImage ? (
+            <div className="h-[280px] md:h-[480px] lg:h-[600px]">
+              {isVideoUrl(project.heroImage) ? (
+                <video
+                  src={project.heroImage}
+                  className="h-full w-full object-cover"
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={project.heroImage} alt={name} className="h-full w-full object-cover" />
+              )}
+            </div>
+          ) : (
+            <div
+              className="grid h-[280px] place-items-center md:h-[480px] lg:h-[600px]"
+              style={{
+                background:
+                  'radial-gradient(circle at 30% 20%, rgba(140,178,255,0.12), transparent 50%), radial-gradient(circle at 70% 80%, rgba(191,140,255,0.10), transparent 50%)',
+              }}
+            >
+              <span className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
+                Demo placeholder
+              </span>
+            </div>
+          )}
         </div>
+        </BuildIn>
       </section>
 
       {/* 01 Context */}
       {ctx.length > 0 && (
+        <BuildIn key={`${slug}-context`} inView>
         <section className="mx-auto max-w-[880px] px-6 py-[80px] md:py-[120px]">
           <SectionLabel n="01" title={t('context')} />
           <div className="mt-10 flex flex-col gap-6">
@@ -120,10 +170,12 @@ export default async function ProjectPage({ params }: PageProps) {
             ))}
           </div>
         </section>
+        </BuildIn>
       )}
 
       {/* 02 Architecture */}
       {architecture.length > 0 && (
+        <BuildIn key={`${slug}-arch`} inView>
         <section className="mx-auto max-w-[1120px] px-6 py-[80px] md:py-[120px] md:px-12">
           <SectionLabel n="02" title={t('architecture')} />
           <ul className="mt-10 flex flex-col">
@@ -150,10 +202,12 @@ export default async function ProjectPage({ params }: PageProps) {
             ))}
           </ul>
         </section>
+        </BuildIn>
       )}
 
       {/* 03 Process */}
       {decisions.length > 0 && (
+        <BuildIn key={`${slug}-process`} inView>
         <section className="mx-auto max-w-[880px] px-6 py-[80px] md:py-[120px]">
           <SectionLabel n="03" title={t('process')} />
           <ol className="mt-10 flex flex-col gap-12">
@@ -178,10 +232,12 @@ export default async function ProjectPage({ params }: PageProps) {
             ))}
           </ol>
         </section>
+        </BuildIn>
       )}
 
       {/* 04 Outcome */}
       {lessons.length > 0 && (
+        <BuildIn key={`${slug}-outcome`} inView>
         <section className="mx-auto max-w-[880px] px-6 py-[80px] md:py-[120px]">
           <SectionLabel n="04" title={t('outcome')} />
           <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
@@ -200,9 +256,11 @@ export default async function ProjectPage({ params }: PageProps) {
             ))}
           </div>
         </section>
+        </BuildIn>
       )}
 
       {/* Prev/Next */}
+      <BuildIn key={`${slug}-prevnext`} inView>
       <section className="mx-auto max-w-[1280px] px-6 pt-16 md:px-12 lg:px-20">
         <div className="grid grid-cols-1 gap-4 border-t border-[var(--color-glass-border)] pt-8 md:grid-cols-2">
           {prev ? (
@@ -240,6 +298,7 @@ export default async function ProjectPage({ params }: PageProps) {
           )}
         </div>
       </section>
+      </BuildIn>
     </>
   );
 }
