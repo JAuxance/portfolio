@@ -125,21 +125,12 @@ export default async function ProjectPage({ params }: PageProps) {
             </span>
           </div>
           {project.heroImage ? (
-            <div className="h-[280px] md:h-[480px] lg:h-[600px]">
-              {isVideoUrl(project.heroImage) ? (
-                <video
-                  src={project.heroImage}
-                  className="h-full w-full object-cover"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                />
-              ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={project.heroImage} alt={name} className="h-full w-full object-cover" />
-              )}
-            </div>
+            <ProjectHero
+              href={project.liveUrl ?? project.repoUrl}
+              src={project.heroImage}
+              alt={name}
+              label={project.liveUrl ? t('live') : t('code')}
+            />
           ) : (
             <div
               className="grid h-[280px] place-items-center md:h-[480px] lg:h-[600px]"
@@ -300,6 +291,59 @@ export default async function ProjectPage({ params }: PageProps) {
       </section>
       </BuildIn>
     </>
+  );
+}
+
+/**
+ * The hero media inside the browser mockup. When the project has a live or
+ * repo URL, the whole image becomes an external link (the AI Journey hero even
+ * prints that URL), with a subtle hover hint. No link → a plain framed tile.
+ */
+function ProjectHero({
+  href,
+  src,
+  alt,
+  label,
+}: {
+  href: string | null;
+  src: string;
+  alt: string;
+  label: string;
+}) {
+  const frame = 'h-[280px] md:h-[480px] lg:h-[600px]';
+  const media = isVideoUrl(src) ? (
+    <video src={src} className="h-full w-full object-cover" autoPlay loop muted playsInline />
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={alt}
+      className="h-full w-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.015]"
+    />
+  );
+
+  if (!href) return <div className={frame}>{media}</div>;
+
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`${alt} — ${label}`}
+      className={`group relative block cursor-pointer overflow-hidden ${frame}`}
+    >
+      {media}
+      <span
+        className="pointer-events-none absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--color-glass-border)] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          backdropFilter: 'blur(12px)',
+          background: 'color-mix(in srgb, var(--color-bg) 70%, transparent)',
+        }}
+      >
+        {label} ↗
+      </span>
+    </a>
   );
 }
 
