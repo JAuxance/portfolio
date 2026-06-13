@@ -24,3 +24,6 @@ npm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# admin media uploads (local CMS content, runtime-written)
+/uploads

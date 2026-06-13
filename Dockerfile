@@ -54,6 +54,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # not reliably traced into the standalone bundle — copy them in explicitly.
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
 
+# Runtime-written admin uploads (mounted as a named volume in compose) — the
+# server runs as uid 1001, so the directory must be writable by it.
+RUN mkdir -p /app/uploads && chown nextjs:nodejs /app/uploads
+
 USER nextjs
 EXPOSE 3000
 CMD ["node", "server.js"]

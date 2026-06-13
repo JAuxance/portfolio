@@ -63,9 +63,14 @@ services:
       DATABASE_URL: postgresql://postgres:pw@db:5432/portfolio
     ports:
       - "3000:3000"
+    volumes:
+      # Admin media uploads must outlive container rebuilds — the DB keeps
+      # /uploads/… paths in Project.heroImage.
+      - uploads:/app/uploads
     depends_on:
       migrate:
         condition: service_completed_successfully
 
 volumes:
   pgdata:
+  uploads:
