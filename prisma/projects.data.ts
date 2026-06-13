@@ -135,7 +135,7 @@ export const projectSeedData: Prisma.ProjectCreateManyInput[] = [
     stack: ['Tauri v2', 'Rust', 'React 19', 'TypeScript', 'Google Drive API'],
     liveUrl: null,
     repoUrl: 'https://github.com/JAuxance/Stela',
-    heroImage: '/projects/stela.webp',
+    heroImage: '/projects/stela.webm',
     featured: false,
     order: 3,
     published: true,
