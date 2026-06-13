@@ -19,6 +19,7 @@ export const projectSeedData: Prisma.ProjectCreateManyInput[] = [
     stack: ['FastAPI', 'React 19', 'TypeScript', 'Ollama', 'PostgreSQL', 'Tailwind v4'],
     liveUrl: null,
     repoUrl: 'https://github.com/JAuxance/JobMatch',
+    heroImage: '/projects/jobmatch.webp',
     featured: true,
     order: 1,
     published: true,
