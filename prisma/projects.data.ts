@@ -213,6 +213,7 @@ export const projectSeedData: Prisma.ProjectCreateManyInput[] = [
     stack: ['Python', 'NumPy', 'pandas', 'scikit-learn', 'Jupyter'],
     liveUrl: null,
     repoUrl: 'https://github.com/JAuxance/ai-journey',
+    heroImage: '/projects/ai-journey.webp',
     featured: false,
     order: 0,
     published: true,
