@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { parseInput } from '@/lib/validate';
 
 const RefInput = z.object({
   citation: z.string().min(1),
@@ -26,7 +27,7 @@ export async function createReference(input: Partial<RefInputType>) {
   await requireAuth();
   const last = await db.reference.findFirst({ orderBy: { order: 'desc' } });
   const order = (last?.order ?? -1) + 1;
-  const data = RefInput.parse({
+  const data = parseInput(RefInput, {
     citation: input.citation ?? '',
     published: input.published ?? true,
   });
@@ -37,7 +38,7 @@ export async function createReference(input: Partial<RefInputType>) {
 
 export async function updateReference(id: string, input: RefInputType) {
   await requireAuth();
-  const data = RefInput.parse(input);
+  const data = parseInput(RefInput, input);
   const item = await db.reference.update({ where: { id }, data });
   invalidate();
   return { ok: true as const, data: item };

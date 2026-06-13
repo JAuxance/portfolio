@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { parseInput } from '@/lib/validate';
 import { StationState } from '@prisma/client';
 
 const StationInput = z.object({
@@ -31,7 +32,7 @@ export async function createStation(input: Partial<StationInputType>) {
   await requireAuth();
   const last = await db.trajectoryStation.findFirst({ orderBy: { order: 'desc' } });
   const order = (last?.order ?? -1) + 1;
-  const data = StationInput.parse({
+  const data = parseInput(StationInput, {
     year: input.year ?? '20XX',
     instEn: input.instEn ?? 'Untitled',
     instFr: input.instFr ?? 'Sans titre',
@@ -46,7 +47,7 @@ export async function createStation(input: Partial<StationInputType>) {
 
 export async function updateStation(id: string, input: StationInputType) {
   await requireAuth();
-  const data = StationInput.parse(input);
+  const data = parseInput(StationInput, input);
   const item = await db.trajectoryStation.update({ where: { id }, data });
   invalidate();
   return { ok: true as const, data: item };

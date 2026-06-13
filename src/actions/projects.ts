@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { flexibleUrl, parseInput } from '@/lib/validate';
 import { ProjectStatus } from '@prisma/client';
 
 const ProjectInput = z.object({
@@ -14,8 +15,8 @@ const ProjectInput = z.object({
   taglineFr: z.string().min(1),
   status: z.nativeEnum(ProjectStatus),
   stack: z.array(z.string()).default([]),
-  liveUrl: z.string().url().optional().nullable().or(z.literal('')),
-  repoUrl: z.string().url().optional().nullable().or(z.literal('')),
+  liveUrl: flexibleUrl,
+  repoUrl: flexibleUrl,
   featured: z.boolean().default(false),
   published: z.boolean().default(true),
   contextEn: z.array(z.string()).default([]),
@@ -41,14 +42,6 @@ async function requireAuth() {
   if (!session) throw new Error('unauthorized');
 }
 
-function normalizeUrls<T extends { liveUrl?: string | null; repoUrl?: string | null }>(input: T) {
-  return {
-    ...input,
-    liveUrl: input.liveUrl === '' ? null : input.liveUrl ?? null,
-    repoUrl: input.repoUrl === '' ? null : input.repoUrl ?? null,
-  };
-}
-
 function invalidate() {
   revalidatePath('/', 'layout');
   revalidatePath('/admin/work');
@@ -58,7 +51,7 @@ export async function createProject(input: Partial<ProjectInputType>) {
   await requireAuth();
   const last = await db.project.findFirst({ orderBy: { order: 'desc' } });
   const order = (last?.order ?? -1) + 1;
-  const data = ProjectInput.parse({
+  const data = parseInput(ProjectInput, {
     slug: input.slug ?? `untitled-${Date.now()}`,
     nameEn: input.nameEn ?? 'Untitled',
     nameFr: input.nameFr ?? 'Sans titre',
@@ -85,15 +78,15 @@ export async function createProject(input: Partial<ProjectInputType>) {
     contextLabelEn: input.contextLabelEn ?? null,
     contextLabelFr: input.contextLabelFr ?? null,
   });
-  const project = await db.project.create({ data: { ...normalizeUrls(data), order } });
+  const project = await db.project.create({ data: { ...data, order } });
   invalidate();
   return { ok: true as const, data: project };
 }
 
 export async function updateProject(id: string, input: ProjectInputType) {
   await requireAuth();
-  const data = ProjectInput.parse(input);
-  const project = await db.project.update({ where: { id }, data: normalizeUrls(data) });
+  const data = parseInput(ProjectInput, input);
+  const project = await db.project.update({ where: { id }, data });
   invalidate();
   return { ok: true as const, data: project };
 }

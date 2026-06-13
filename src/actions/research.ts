@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { db } from '@/lib/db';
 import { auth } from '@/lib/auth';
+import { parseInput } from '@/lib/validate';
 
 const ResearchInput = z.object({
   number: z.string().min(1),
@@ -30,7 +31,7 @@ export async function createResearchTopic(input: Partial<ResearchInputType>) {
   await requireAuth();
   const last = await db.researchTopic.findFirst({ orderBy: { order: 'desc' } });
   const order = (last?.order ?? -1) + 1;
-  const data = ResearchInput.parse({
+  const data = parseInput(ResearchInput, {
     number: input.number ?? String(order + 1).padStart(2, '0'),
     titleEn: input.titleEn ?? 'Untitled',
     titleFr: input.titleFr ?? 'Sans titre',
@@ -45,7 +46,7 @@ export async function createResearchTopic(input: Partial<ResearchInputType>) {
 
 export async function updateResearchTopic(id: string, input: ResearchInputType) {
   await requireAuth();
-  const data = ResearchInput.parse(input);
+  const data = parseInput(ResearchInput, input);
   const item = await db.researchTopic.update({ where: { id }, data });
   invalidate();
   return { ok: true as const, data: item };
