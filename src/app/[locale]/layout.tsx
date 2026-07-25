@@ -6,6 +6,7 @@ import { Header } from '@/components/public/header';
 import { Footer } from '@/components/public/footer';
 import { GlowBackdrop } from '@/components/public/atmospheric-glow';
 import { locales } from '@/lib/i18n-config';
+import { db } from '@/lib/db';
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -21,13 +22,16 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   if (!(locales as readonly string[]).includes(locale)) notFound();
 
   setRequestLocale(locale);
-  const messages = await getMessages();
+  const [messages, publishedBooks] = await Promise.all([
+    getMessages(),
+    db.book.count({ where: { published: true } }),
+  ]);
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div className="relative min-h-screen overflow-hidden">
         <GlowBackdrop />
-        <Header />
+        <Header showBook={publishedBooks > 0} />
         <main className="relative z-10">{children}</main>
         <Footer />
       </div>

@@ -20,7 +20,7 @@ interface WorkSectionProps {
 /**
  * Work as a file index: numbered hairline rows on the left, and a sticky
  * preview panel on the right that crossfades to the hovered project's
- * media. Rows are the same typographic grammar as the journal entries;
+ * media. Rows use the same compact typographic grammar as the rest of the site;
  * on mobile the panel disappears and each row carries its media inline.
  */
 export function WorkSection({ projects, locale, githubUrl }: WorkSectionProps) {

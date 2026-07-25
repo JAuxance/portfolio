@@ -2,32 +2,56 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import type { TrajectoryStation } from '@prisma/client';
-import { StationState } from '@prisma/client';
+import { GripVertical, Plus, Route, Trash2 } from 'lucide-react';
+import {
+  StationState,
+  type TrajectoryStation,
+} from '@prisma/client';
+import {
+  createStation,
+  deleteStation,
+  reorderStations,
+  updateStation,
+} from '@/actions/trajectory';
 import { PageShell } from '@/components/admin/page-shell';
-import { Button, Input, Textarea, Field, FormSurface } from '@/components/admin/ui';
+import {
+  Button,
+  Field,
+  FormSurface,
+  Input,
+  Textarea,
+} from '@/components/admin/ui';
 import { useSaveState } from '@/components/admin/save-state-context';
-import { createStation, updateStation, deleteStation, reorderStations } from '@/actions/trajectory';
 import { cn } from '@/lib/cn';
 
 const STATE_LABELS: Record<StationState, string> = {
-  CURRENT: 'Current',
-  PLANNED: 'Planned',
-  GOAL: 'Goal',
+  CURRENT: 'Maintenant',
+  PLANNED: 'Prévu',
+  GOAL: 'Objectif',
 };
 
-export function TrajectoryAdminClient({ initialItems }: { initialItems: TrajectoryStation[] }) {
+export function TrajectoryAdminClient({
+  initialItems,
+}: {
+  initialItems: TrajectoryStation[];
+}) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialItems[0]?.id ?? null
+  );
   const [dragId, setDragId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const { setSaving, setSaved, setError } = useSaveState();
 
-  const selected = selectedId ? items.find((i) => i.id === selectedId) ?? null : null;
+  const selected = selectedId
+    ? items.find((item) => item.id === selectedId) ?? null
+    : null;
 
-  function updateLocal(id: string, patch: Partial<TrajectoryStation>) {
-    setItems((p) => p.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  function patch(id: string, values: Partial<TrajectoryStation>) {
+    setItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...values } : item))
+    );
   }
 
   async function save(item: TrajectoryStation) {
@@ -42,129 +66,203 @@ export function TrajectoryAdminClient({ initialItems }: { initialItems: Trajecto
         state: item.state,
       });
       setSaved();
-    } catch { setError(); }
+    } catch {
+      setError();
+    }
   }
 
   function handleDrop(targetId: string) {
     if (!dragId || dragId === targetId) return;
-    const dragIdx = items.findIndex((p) => p.id === dragId);
-    const targetIdx = items.findIndex((p) => p.id === targetId);
-    if (dragIdx < 0 || targetIdx < 0) return;
+    const from = items.findIndex((item) => item.id === dragId);
+    const to = items.findIndex((item) => item.id === targetId);
+    if (from < 0 || to < 0) return;
     const next = [...items];
-    const [m] = next.splice(dragIdx, 1);
-    next.splice(targetIdx, 0, m);
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
     setItems(next);
     setDragId(null);
-    startTransition(() => { reorderStations(next.map((p) => p.id)); });
+    startTransition(async () => {
+      try {
+        setSaving();
+        await reorderStations(next.map((item) => item.id));
+        setSaved();
+      } catch {
+        setError();
+      }
+    });
   }
 
   function handleCreate() {
     startTransition(async () => {
-      const res = await createStation({});
-      if (res.ok) {
-        setItems((p) => [...p, res.data]);
-        setSelectedId(res.data.id);
+      const response = await createStation({});
+      if (response.ok) {
+        setItems((current) => [...current, response.data]);
+        setSelectedId(response.data.id);
         router.refresh();
       }
     });
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this station?')) return;
-    await deleteStation(id);
-    setItems((p) => p.filter((i) => i.id !== id));
-    setSelectedId(null);
+  async function handleDelete(item: TrajectoryStation) {
+    if (!confirm(`Supprimer l’étape « ${item.instFr} » ?`)) return;
+    await deleteStation(item.id);
+    const remaining = items.filter((current) => current.id !== item.id);
+    setItems(remaining);
+    setSelectedId(remaining[0]?.id ?? null);
     router.refresh();
   }
 
   return (
     <PageShell
-      breadcrumb={['Content', 'Trajectory']}
-      title="Trajectory"
-      subtitle="Stations on the timeline. Only one should be marked CURRENT at a time."
+      breadcrumb={['Heather', 'Parcours']}
+      title="Parcours"
+      subtitle="Les étapes qui racontent d’où tu viens et où tu vas. Une seule étape devrait être marquée « Maintenant »."
       action={
-        <Button variant="outline" onClick={handleCreate} disabled={pending}>
-          + New station
+        <Button onClick={handleCreate} disabled={pending}>
+          <Plus size={14} />
+          Ajouter
         </Button>
       }
     >
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4">
-        <div className="flex flex-col gap-2">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              draggable
-              onDragStart={() => setDragId(item.id)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => handleDrop(item.id)}
-              onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}
-              className={cn(
-                'cursor-pointer grid grid-cols-[24px_120px_1fr_100px] items-center gap-4 rounded-[10px] border px-4 py-3 transition-colors',
-                selectedId === item.id ? 'border-white/[0.14] bg-white/[0.04]' : 'border-white/[0.06] bg-white/[0.015] hover:bg-white/[0.03]'
-              )}
-            >
-              <span aria-hidden className="grid grid-cols-2 gap-[3px] text-[var(--color-text-tertiary)]">
-                {[...Array(6)].map((_, i) => (<span key={i} className="h-[3px] w-[3px] rounded-full bg-current" />))}
-              </span>
-              <span className="font-mono text-[11px] text-[var(--color-text-tertiary)]" style={{ fontFamily: 'var(--font-mono)' }}>{item.year}</span>
-              <div>
-                <p className="truncate text-[14px] font-medium text-[var(--color-text-primary)]">{item.instEn}</p>
-                <p className="line-clamp-1 text-[12px] text-[var(--color-text-secondary)]">{item.objEn}</p>
-              </div>
-              <span className="text-right font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]" style={{ fontFamily: 'var(--font-mono)' }}>
-                {STATE_LABELS[item.state]}
-              </span>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(380px,1.15fr)]">
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.015] p-2">
+          {items.length === 0 ? (
+            <div className="px-5 py-16 text-center">
+              <Route size={20} className="mx-auto mb-3 text-white/25" />
+              <p className="text-[12px] text-white/30">Aucune étape pour le moment.</p>
             </div>
-          ))}
+          ) : (
+            <div className="flex flex-col gap-1">
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  draggable
+                  onDragStart={() => setDragId(item.id)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => handleDrop(item.id)}
+                  onClick={() => setSelectedId(item.id)}
+                  className={cn(
+                    'grid w-full grid-cols-[18px_54px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
+                    selectedId === item.id
+                      ? 'border-white/[0.10] bg-white/[0.055]'
+                      : 'border-transparent hover:bg-white/[0.025]'
+                  )}
+                >
+                  <GripVertical size={14} className="text-white/20" />
+                  <span className="font-mono text-[9px] text-white/25">
+                    {item.year}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] font-medium text-white/75">
+                      {item.instFr}
+                    </span>
+                    <span className="mt-1 block truncate text-[10px] text-white/28">
+                      {item.objFr}
+                    </span>
+                  </span>
+                  <span className="rounded-full border border-white/[0.06] px-2 py-1 font-mono text-[8px] uppercase tracking-[0.12em] text-white/30">
+                    {STATE_LABELS[item.state]}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
 
-      {selected && (
-        <FormSurface className="mt-6 flex flex-col gap-5">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-[200px_1fr]">
-            <Field label="Year">
-              <Input value={selected.year} onChange={(e) => updateLocal(selected.id, { year: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="State">
-              <div className="flex gap-2">
-                {(Object.keys(STATE_LABELS) as StationState[]).map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => { updateLocal(selected.id, { state: s }); save({ ...selected, state: s }); }}
-                    className={cn(
-                      'rounded-full border px-4 py-1.5 text-[12px] transition-colors',
-                      selected.state === s
-                        ? 'border-white/[0.14] bg-white/[0.08] text-white'
-                        : 'border-white/[0.06] bg-white/[0.025] text-[var(--color-text-secondary)] hover:text-white'
-                    )}
-                  >
-                    {STATE_LABELS[s]}
-                  </button>
-                ))}
-              </div>
-            </Field>
+        {selected ? (
+          <FormSurface className="lg:sticky lg:top-24">
+            <div className="mb-6 border-b border-white/[0.06] pb-5">
+              <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">
+                Modifier
+              </p>
+              <h2 className="mt-2 text-[18px] font-medium text-white/80">
+                {selected.instFr}
+              </h2>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Année">
+                <Input
+                  value={selected.year}
+                  onChange={(event) => patch(selected.id, { year: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="État">
+                <div className="flex h-10 flex-wrap items-center gap-2">
+                  {(Object.keys(STATE_LABELS) as StationState[]).map((state) => (
+                    <button
+                      key={state}
+                      type="button"
+                      onClick={() => {
+                        const next = { ...selected, state };
+                        patch(selected.id, { state });
+                        void save(next);
+                      }}
+                      className={cn(
+                        'rounded-full border px-3 py-1.5 text-[10px] transition-colors',
+                        selected.state === state
+                          ? 'border-white/[0.14] bg-white/[0.08] text-white'
+                          : 'border-white/[0.06] text-white/30 hover:text-white'
+                      )}
+                    >
+                      {STATE_LABELS[state]}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <Field label="Institution · Français">
+                <Input
+                  value={selected.instFr}
+                  onChange={(event) => patch(selected.id, { instFr: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="Institution · English">
+                <Input
+                  value={selected.instEn}
+                  onChange={(event) => patch(selected.id, { instEn: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="Objectif · Français">
+                <Textarea
+                  rows={5}
+                  value={selected.objFr}
+                  onChange={(event) => patch(selected.id, { objFr: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="Objectif · English">
+                <Textarea
+                  rows={5}
+                  value={selected.objEn}
+                  onChange={(event) => patch(selected.id, { objEn: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+            </div>
+
+            <div className="mt-6 flex justify-end border-t border-white/[0.06] pt-5">
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => handleDelete(selected)}
+              >
+                <Trash2 size={13} />
+                Supprimer
+              </Button>
+            </div>
+          </FormSurface>
+        ) : (
+          <div className="grid min-h-[280px] place-items-center rounded-2xl border border-dashed border-white/[0.07]">
+            <p className="text-[12px] text-white/25">
+              Sélectionne une étape à modifier.
+            </p>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Institution (EN)">
-              <Input value={selected.instEn} onChange={(e) => updateLocal(selected.id, { instEn: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="Institution (FR)">
-              <Input value={selected.instFr} onChange={(e) => updateLocal(selected.id, { instFr: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="Objective (EN)">
-              <Textarea rows={3} value={selected.objEn} onChange={(e) => updateLocal(selected.id, { objEn: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="Objective (FR)">
-              <Textarea rows={3} value={selected.objFr} onChange={(e) => updateLocal(selected.id, { objFr: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-          </div>
-          <div className="mt-2 flex items-center justify-between border-t border-white/[0.06] pt-4">
-            <Button variant="danger" onClick={() => handleDelete(selected.id)}>Delete station</Button>
-            <Button variant="outline" onClick={() => setSelectedId(null)}>Close</Button>
-          </div>
-        </FormSurface>
-      )}
+        )}
+      </div>
     </PageShell>
   );
 }

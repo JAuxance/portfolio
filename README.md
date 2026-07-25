@@ -3,7 +3,8 @@
 Personal portfolio + admin CMS for Auxance Jourdan.
 
 - **Public site:** `/[locale]` — long-scroll portfolio in EN / FR
-- **Admin CMS:** `/admin` — credentialed editor for every content piece
+- **Public book:** `/[locale]/book` — published chapters from the native writing studio
+- **Admin Studio:** `/admin` — focused, credentialed editor for the book and portfolio
 
 ## Stack
 
@@ -83,9 +84,10 @@ Or use Neon / Supabase.
 - All public content lives in Postgres. Public Server Components read directly via Prisma.
 - Admin writes through typed Server Actions in `src/actions/*`.
 - Every mutation calls `revalidatePath('/', 'layout')`, so changes appear on the public site without a redeploy.
+- Book: a native `Book → Chapter` model with a visual rich-text editor, debounced autosave, live preview, word-count progress, and chapter-level draft/review/published states.
+- Admin: responsive navigation grouped around Writing, Portfolio, and Heather context. Collection screens use a consistent master-detail layout.
 - i18n: `next-intl`. UI strings in `messages/{en,fr}.json`. Content strings stored bilingually on each Prisma model.
 - Auth: NextAuth v5 credentials provider; single AdminUser row, bcrypt-hashed.
-- Journal: the home `Journal` section pulls posts from Substack via RSS server-side (`src/lib/substack.ts`, revalidated hourly). Everything is gated on `substackConfigured` — until the real subdomain replaces the placeholder, no Substack links or fetches render.
 - Uploads: admin drag-and-drop images are sniffed by magic bytes and converted to WebP via `sharp`; webm/mp4 stored as-is. See the upload note below.
 
 ## Folder map
@@ -94,13 +96,15 @@ Or use Neon / Supabase.
 src/
 ├── app/
 │   ├── [locale]/                 # public site (EN / FR)
-│   │   ├── (sections)/           # home sections (hero, now, journal, work, contact…)
+│   │   ├── (sections)/           # home sections (hero, now, book, work, contact…)
+│   │   ├── book/                 # book index + published chapter reader
 │   │   ├── work/[slug]/          # project detail page
 │   │   └── page.tsx              # home
 │   ├── admin/
 │   │   ├── login/                # public login form
 │   │   └── (authed)/             # auth-gated admin pages
 │   │       ├── work/             # canonical list + inline edit
+│   │       ├── book/             # native long-form writing studio
 │   │       ├── now/
 │   │       ├── research/         # kept as Heather chat context (not public)
 │   │       ├── references/
@@ -117,7 +121,7 @@ src/
 ├── components/
 │   ├── public/                   # site components
 │   └── admin/                    # admin shell + edit panels
-├── lib/                          # db, auth, i18n, tokens, motion, heather, substack, media, validate
+├── lib/                          # db, auth, i18n, tokens, motion, heather, book content, media, validate
 └── types/content.ts
 ```
 

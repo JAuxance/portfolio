@@ -1,7 +1,7 @@
 {
   "nav": {
+    "book": "Book",
     "work": "Work",
-    "journal": "Journal",
     "contact": "Contact"
   },
   "hero": {
@@ -14,7 +14,7 @@
     "heatherLabel": "Heather · AI assistant",
     "heatherThinking": "Heather is thinking…",
     "greeting": "Hey you.",
-    "hubJournal": "Journal · Substack",
+    "hubBook": "Book · Manuscript",
     "hubCode": "Code · GitHub",
     "hubContact": "Contact",
     "hubAria": "Site pillars"
@@ -40,12 +40,21 @@
     "live": "Live",
     "allCode": "All code · GitHub"
   },
-  "journal": {
-    "title": "Road notes toward the PhD.",
-    "via": "Substack",
-    "emptyLabel": "Coming soon",
-    "empty": "The first entry is being written.",
-    "subscribe": "Subscribe on Substack"
+  "book": {
+    "eyebrow": "Work in progress",
+    "publication": "Written and published here",
+    "sectionTitle": "A book, one chapter at a time.",
+    "read": "Enter the book",
+    "progress": "Progress",
+    "words": "words",
+    "chapters": "published chapters",
+    "chapter": "Chapter",
+    "minuteRead": "min read",
+    "contents": "Contents",
+    "back": "Back to the book",
+    "previous": "Previous chapter",
+    "next": "Next chapter",
+    "draftNotice": "New chapters are currently being written."
   },
   "contact": {
     "title": "Let's talk.",

@@ -2,57 +2,44 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
+import { Activity, GripVertical, Plus, Trash2 } from 'lucide-react';
 import type { NowItem } from '@prisma/client';
+import {
+  createNowItem,
+  deleteNowItem,
+  reorderNowItems,
+  updateNowItem,
+} from '@/actions/now';
 import { PageShell } from '@/components/admin/page-shell';
-import { Button, Input, Textarea, Field, FormSurface, Toggle } from '@/components/admin/ui';
+import {
+  Button,
+  Field,
+  FormSurface,
+  Input,
+  Textarea,
+  Toggle,
+} from '@/components/admin/ui';
 import { useSaveState } from '@/components/admin/save-state-context';
-import { createNowItem, updateNowItem, deleteNowItem, reorderNowItems } from '@/actions/now';
 import { cn } from '@/lib/cn';
 
 export function NowAdminClient({ initialItems }: { initialItems: NowItem[] }) {
   const router = useRouter();
   const [items, setItems] = useState(initialItems);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialItems[0]?.id ?? null
+  );
   const [dragId, setDragId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const { setSaving, setSaved, setError } = useSaveState();
 
-  const selected = selectedId ? items.find((i) => i.id === selectedId) ?? null : null;
+  const selected = selectedId
+    ? items.find((item) => item.id === selectedId) ?? null
+    : null;
 
-  function handleDrop(targetId: string) {
-    if (!dragId || dragId === targetId) return;
-    const dragIdx = items.findIndex((p) => p.id === dragId);
-    const targetIdx = items.findIndex((p) => p.id === targetId);
-    if (dragIdx < 0 || targetIdx < 0) return;
-    const next = [...items];
-    const [m] = next.splice(dragIdx, 1);
-    next.splice(targetIdx, 0, m);
-    setItems(next);
-    setDragId(null);
-    startTransition(() => { reorderNowItems(next.map((p) => p.id)); });
-  }
-
-  function handleCreate() {
-    startTransition(async () => {
-      const res = await createNowItem({
-        label: 'BUILDING',
-        titleEn: 'New item',
-        titleFr: 'Nouvel élément',
-        bodyEn: 'Body…',
-        bodyFr: 'Description…',
-        stack: '',
-        published: true,
-      });
-      if (res.ok) {
-        setItems((p) => [...p, res.data]);
-        setSelectedId(res.data.id);
-        router.refresh();
-      }
-    });
-  }
-
-  function updateLocal(id: string, patch: Partial<NowItem>) {
-    setItems((p) => p.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+  function patch(id: string, values: Partial<NowItem>) {
+    setItems((current) =>
+      current.map((item) => (item.id === id ? { ...item, ...values } : item))
+    );
   }
 
   async function save(item: NowItem) {
@@ -73,101 +60,212 @@ export function NowAdminClient({ initialItems }: { initialItems: NowItem[] }) {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Delete this Now item?')) return;
-    await deleteNowItem(id);
-    setItems((p) => p.filter((i) => i.id !== id));
-    setSelectedId(null);
+  function handleDrop(targetId: string) {
+    if (!dragId || dragId === targetId) return;
+    const from = items.findIndex((item) => item.id === dragId);
+    const to = items.findIndex((item) => item.id === targetId);
+    if (from < 0 || to < 0) return;
+    const next = [...items];
+    const [moved] = next.splice(from, 1);
+    next.splice(to, 0, moved);
+    setItems(next);
+    setDragId(null);
+    startTransition(async () => {
+      try {
+        setSaving();
+        await reorderNowItems(next.map((item) => item.id));
+        setSaved();
+      } catch {
+        setError();
+      }
+    });
+  }
+
+  function handleCreate() {
+    startTransition(async () => {
+      const response = await createNowItem({
+        label: 'BUILDING',
+        titleEn: 'New item',
+        titleFr: 'Nouvel élément',
+        bodyEn: 'Description…',
+        bodyFr: 'Description…',
+        stack: '',
+        published: true,
+      });
+      if (response.ok) {
+        setItems((current) => [...current, response.data]);
+        setSelectedId(response.data.id);
+        router.refresh();
+      }
+    });
+  }
+
+  async function handleDelete(item: NowItem) {
+    if (!confirm(`Supprimer « ${item.titleFr} » ?`)) return;
+    await deleteNowItem(item.id);
+    const remaining = items.filter((current) => current.id !== item.id);
+    setItems(remaining);
+    setSelectedId(remaining[0]?.id ?? null);
     router.refresh();
   }
 
   return (
     <PageShell
-      breadcrumb={['Content', 'Now']}
-      title="Now"
-      subtitle="What you're currently working on. Drag to reorder."
+      breadcrumb={['Portfolio', 'En ce moment']}
+      title="En ce moment"
+      subtitle="Les sujets sur lesquels tu travailles actuellement. Fais glisser les lignes pour changer leur ordre."
       action={
-        <Button variant="outline" onClick={handleCreate} disabled={pending}>
-          + New item
+        <Button onClick={handleCreate} disabled={pending}>
+          <Plus size={14} />
+          Ajouter
         </Button>
       }
     >
-      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4">
-        <div className="flex flex-col gap-2">
-          {items.length === 0 && (
-            <p className="px-4 py-8 text-center text-[13px] text-[var(--color-text-tertiary)]">No items yet.</p>
-          )}
-          {items.map((item) => (
-            <div
-              key={item.id}
-              draggable
-              onDragStart={() => setDragId(item.id)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => handleDrop(item.id)}
-              onClick={() => setSelectedId(selectedId === item.id ? null : item.id)}
-              className={cn(
-                'cursor-pointer grid grid-cols-[24px_120px_1fr_120px] items-center gap-4 rounded-[10px] border px-4 py-3 transition-colors',
-                selectedId === item.id
-                  ? 'border-white/[0.14] bg-white/[0.04]'
-                  : 'border-white/[0.06] bg-white/[0.015] hover:bg-white/[0.03]'
-              )}
-            >
-              <span aria-hidden className="grid grid-cols-2 gap-[3px] text-[var(--color-text-tertiary)]">
-                {[...Array(6)].map((_, i) => (<span key={i} className="h-[3px] w-[3px] rounded-full bg-current" />))}
-              </span>
-              <span
-                className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-secondary)]"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                {item.label}
-              </span>
-              <div>
-                <p className="truncate text-[14px] font-medium text-[var(--color-text-primary)]">{item.titleEn}</p>
-                <p className="line-clamp-1 text-[12px] text-[var(--color-text-secondary)]">{item.bodyEn}</p>
-              </div>
-              <div className="flex items-center justify-end gap-2 text-[var(--color-text-tertiary)]">
-                {!item.published && <span className="text-[10px]">Draft</span>}
-              </div>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(380px,1.15fr)]">
+        <div className="rounded-2xl border border-white/[0.07] bg-white/[0.015] p-2">
+          {items.length === 0 ? (
+            <EmptyList />
+          ) : (
+            <div className="flex flex-col gap-1">
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  draggable
+                  onDragStart={() => setDragId(item.id)}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={() => handleDrop(item.id)}
+                  onClick={() => setSelectedId(item.id)}
+                  className={cn(
+                    'grid w-full grid-cols-[18px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 py-3 text-left transition-colors',
+                    selectedId === item.id
+                      ? 'border-white/[0.10] bg-white/[0.055]'
+                      : 'border-transparent hover:bg-white/[0.025]'
+                  )}
+                >
+                  <GripVertical size={14} className="text-white/20" />
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] font-medium text-white/75">
+                      {item.titleFr}
+                    </span>
+                    <span className="mt-1 block truncate text-[10px] text-white/28">
+                      {item.label} · {item.stack || 'Sans stack'}
+                    </span>
+                  </span>
+                  <span
+                    className={cn(
+                      'h-1.5 w-1.5 rounded-full',
+                      item.published ? 'bg-emerald-300/70' : 'bg-white/15'
+                    )}
+                    aria-label={item.published ? 'Visible' : 'Masqué'}
+                  />
+                </button>
+              ))}
             </div>
-          ))}
+          )}
         </div>
-      </div>
 
-      {selected && (
-        <FormSurface className="mt-6 flex flex-col gap-5">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-[200px_1fr_140px]">
-            <Field label="Label" hint="BUILDING / LEARNING / STUDYING">
-              <Input value={selected.label} onChange={(e) => updateLocal(selected.id, { label: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="Stack" hint="Not shown on the site — feeds Heather">
-              <Input value={selected.stack} onChange={(e) => updateLocal(selected.id, { stack: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="Published">
-              <div className="flex h-10 items-center">
-                <Toggle checked={selected.published} onChange={(v) => { updateLocal(selected.id, { published: v }); save({ ...selected, published: v }); }} />
+        {selected ? (
+          <FormSurface className="lg:sticky lg:top-24">
+            <div className="mb-6 flex items-start justify-between border-b border-white/[0.06] pb-5">
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.18em] text-white/30">
+                  Modifier
+                </p>
+                <h2 className="mt-2 text-[18px] font-medium text-white/80">
+                  {selected.titleFr}
+                </h2>
               </div>
-            </Field>
-          </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Field label="Title (EN)">
-              <Input value={selected.titleEn} onChange={(e) => updateLocal(selected.id, { titleEn: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="Title (FR)">
-              <Input value={selected.titleFr} onChange={(e) => updateLocal(selected.id, { titleFr: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="Body (EN)">
-              <Textarea rows={4} value={selected.bodyEn} onChange={(e) => updateLocal(selected.id, { bodyEn: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-            <Field label="Body (FR)">
-              <Textarea rows={4} value={selected.bodyFr} onChange={(e) => updateLocal(selected.id, { bodyFr: e.target.value })} onBlur={() => save(selected)} />
-            </Field>
-          </div>
-          <div className="mt-2 flex items-center justify-between border-t border-white/[0.06] pt-4">
-            <Button variant="danger" onClick={() => handleDelete(selected.id)}>Delete item</Button>
-            <Button variant="outline" onClick={() => setSelectedId(null)}>Close</Button>
-          </div>
-        </FormSurface>
-      )}
+              <Toggle
+                checked={selected.published}
+                onChange={(value) => {
+                  const next = { ...selected, published: value };
+                  patch(selected.id, { published: value });
+                  void save(next);
+                }}
+                label="Afficher sur le site"
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Étiquette">
+                <Input
+                  value={selected.label}
+                  onChange={(event) => patch(selected.id, { label: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="Stack" hint="Utilisée uniquement par Heather.">
+                <Input
+                  value={selected.stack}
+                  onChange={(event) => patch(selected.id, { stack: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="Titre · Français">
+                <Input
+                  value={selected.titleFr}
+                  onChange={(event) => patch(selected.id, { titleFr: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="Titre · English">
+                <Input
+                  value={selected.titleEn}
+                  onChange={(event) => patch(selected.id, { titleEn: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="Description · Français">
+                <Textarea
+                  rows={5}
+                  value={selected.bodyFr}
+                  onChange={(event) => patch(selected.id, { bodyFr: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+              <Field label="Description · English">
+                <Textarea
+                  rows={5}
+                  value={selected.bodyEn}
+                  onChange={(event) => patch(selected.id, { bodyEn: event.target.value })}
+                  onBlur={() => save(selected)}
+                />
+              </Field>
+            </div>
+
+            <div className="mt-6 flex justify-end border-t border-white/[0.06] pt-5">
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => handleDelete(selected)}
+              >
+                <Trash2 size={13} />
+                Supprimer
+              </Button>
+            </div>
+          </FormSurface>
+        ) : (
+          <SelectionHint />
+        )}
+      </div>
     </PageShell>
+  );
+}
+
+function EmptyList() {
+  return (
+    <div className="px-5 py-16 text-center">
+      <Activity size={20} className="mx-auto mb-3 text-white/25" />
+      <p className="text-[12px] text-white/30">Aucun élément pour le moment.</p>
+    </div>
+  );
+}
+
+function SelectionHint() {
+  return (
+    <div className="grid min-h-[280px] place-items-center rounded-2xl border border-dashed border-white/[0.07]">
+      <p className="text-[12px] text-white/25">Sélectionne un élément à modifier.</p>
+    </div>
   );
 }

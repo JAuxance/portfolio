@@ -19,7 +19,6 @@
  */
 
 import { db } from './db';
-import { substackHomeUrl, substackConfigured } from './substack';
 
 export type HeatherLocale = 'en' | 'fr';
 export type HeatherMessage = { role: 'user' | 'assistant'; content: string };
@@ -32,13 +31,23 @@ interface BuildContextOptions {
 
 /** Pulls all public-facing content from the DB and renders it as plain text. */
 export async function buildSiteContext({ locale }: BuildContextOptions): Promise<string> {
-  const [profile, now, projects, research, refs, stations] = await Promise.all([
+  const [profile, now, projects, research, refs, stations, book] = await Promise.all([
     db.profile.findFirst(),
     db.nowItem.findMany({ where: { published: true }, orderBy: { order: 'asc' } }),
     db.project.findMany({ where: { published: true }, orderBy: { order: 'asc' } }),
     db.researchTopic.findMany({ where: { published: true }, orderBy: { order: 'asc' } }),
     db.reference.findMany({ where: { published: true }, orderBy: { order: 'asc' } }),
     db.trajectoryStation.findMany({ orderBy: { order: 'asc' } }),
+    db.book.findFirst({
+      where: { published: true },
+      include: {
+        chapters: {
+          where: { status: 'PUBLISHED' },
+          orderBy: { order: 'asc' },
+          select: { slug: true, title: true, summary: true },
+        },
+      },
+    }),
   ]);
 
   const fr = locale === 'fr';
@@ -53,7 +62,6 @@ export async function buildSiteContext({ locale }: BuildContextOptions): Promise
     // the page's information architecture defines.
     lines.push('', '## Links');
     if (profile.github) lines.push(`- GitHub (all code): ${profile.github}`);
-    if (substackConfigured) lines.push(`- Journal (Substack, PhD-road log): ${substackHomeUrl}`);
     lines.push(`- Email: ${profile.emailPublic}`);
   }
   if (now.length) {
@@ -72,6 +80,19 @@ export async function buildSiteContext({ locale }: BuildContextOptions): Promise
       );
       const ctx = pick(p.contextEn, p.contextFr);
       if (ctx?.length) lines.push(`  context: ${ctx.join(' ')}`);
+    }
+  }
+  if (book) {
+    lines.push(
+      '',
+      '## Book',
+      `${book.title}${book.subtitle ? ` — ${book.subtitle}` : ''} (/book)`
+    );
+    if (book.description) lines.push(book.description);
+    for (const chapter of book.chapters) {
+      lines.push(
+        `- ${chapter.title} (/book/${chapter.slug})${chapter.summary ? ` — ${chapter.summary}` : ''}`
+      );
     }
   }
   if (research.length) {
@@ -119,8 +140,8 @@ export async function* streamHeatherReply(
 ): AsyncGenerator<string, void, unknown> {
   const placeholder =
     opts.locale === 'fr'
-      ? `Je suis Heather, mais Auxance ne m'a pas encore connectée à un modèle. En attendant : tu peux explorer les sections **Now**, **Journal** et **Work** plus bas — tout y est. Et pour les questions précises, l'email dans **Contact** marche très bien.`
-      : `I'm Heather, but Auxance hasn't wired me up to a model yet. In the meantime: the **Now**, **Journal**, and **Work** sections below have everything. For specific questions, the email in **Contact** is the fastest route.`;
+      ? `Je suis Heather, mais Auxance ne m'a pas encore connectée à un modèle. En attendant : tu peux explorer les sections **Livre**, **Now** et **Work** plus bas — tout y est. Et pour les questions précises, l'email dans **Contact** marche très bien.`
+      : `I'm Heather, but Auxance hasn't wired me up to a model yet. In the meantime: the **Book**, **Now**, and **Work** sections below have everything. For specific questions, the email in **Contact** is the fastest route.`;
 
   // Type out the placeholder so the streaming UI feels real.
   const words = placeholder.split(/(\s+)/);

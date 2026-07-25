@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import type { Profile } from '@prisma/client';
 import { SectionTitle } from '@/components/public/section-title';
-import { substackHomeUrl, substackConfigured } from '@/lib/substack';
 
 interface ContactSectionProps {
   profile: Profile;
@@ -14,21 +13,17 @@ interface ContactSectionProps {
 
 /**
  * The closing scene: the email is the answer, everything else supports it.
- * Left — blurb + giant mailto + one-click copy. Right — the Follow index,
- * same hairline-row grammar as the journal and work sections.
+ * Left — blurb + giant mailto + one-click copy. Right — the Follow index.
  */
 export function ContactSection({ profile, locale }: ContactSectionProps) {
   const t = useTranslations('contact');
-  const tJournal = useTranslations('journal');
   const blurb = locale === 'fr' ? profile.contactBlurbFr : profile.contactBlurbEn;
   const [copied, setCopied] = useState(false);
 
-  // The terminal identity directory: GitHub, X, and the journal. LinkedIn and
-  // Read.cv stay in the DB but off the page by the owner's choice.
+  // LinkedIn and Read.cv stay in the DB but off the page by the owner's choice.
   const elsewhere = [
     { label: 'GitHub', href: profile.github },
     { label: 'X', href: profile.twitter },
-    { label: tJournal('via'), href: substackConfigured ? substackHomeUrl : null },
   ].filter((s): s is { label: string; href: string } => !!s.href);
 
   async function copyEmail() {

@@ -101,7 +101,7 @@ export function ChatInput({ placeholder, className }: ChatInputProps) {
       }
       setHistory([...next, { role: 'assistant', content: assistantSoFar }]);
       setPendingAssistant('');
-    } catch (err) {
+    } catch {
       const msg = locale === 'fr' ? 'Heather a buggué une seconde. Réessaie.' : 'Heather glitched for a sec. Try again.';
       setError(msg);
     } finally {

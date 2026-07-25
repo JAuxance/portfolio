@@ -43,7 +43,7 @@ export function StackTagInput({ value, onChange }: StackTagInputProps) {
             type="button"
             onClick={() => onChange(value.filter((_, idx) => idx !== i))}
             className="text-[var(--color-text-tertiary)] hover:text-red-300"
-            aria-label={`Remove ${tag}`}
+            aria-label={`Retirer ${tag}`}
           >
             ×
           </button>
@@ -54,7 +54,7 @@ export function StackTagInput({ value, onChange }: StackTagInputProps) {
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={onKeyDown}
         onBlur={add}
-        placeholder="+ add"
+        placeholder="+ ajouter"
         className="min-w-[80px] flex-1 bg-transparent px-1 py-1 font-mono text-[12px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none"
         style={{ fontFamily: 'var(--font-mono)' }}
       />

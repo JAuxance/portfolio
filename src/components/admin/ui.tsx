@@ -6,7 +6,7 @@ import { cn } from '@/lib/cn';
 export const Label = ({ children, className, ...rest }: { children: ReactNode; className?: string; htmlFor?: string }) => (
   <label
     className={cn(
-      'font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]',
+      'font-mono text-[9px] uppercase tracking-[0.18em] text-white/35',
       className
     )}
     style={{ fontFamily: 'var(--font-mono)' }}
@@ -24,8 +24,8 @@ export const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputE
     <input
       ref={ref}
       className={cn(
-        'w-full rounded-lg border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-[14px] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none transition-colors',
-        'focus:border-white/[0.20] focus:bg-white/[0.04]',
+        'h-10 w-full rounded-xl border border-white/[0.075] bg-black/10 px-3.5 text-[13px] text-[var(--color-text-primary)] placeholder:text-white/20 outline-none transition-colors',
+        'focus:border-white/[0.18] focus:bg-white/[0.025]',
         className
       )}
       {...rest}
@@ -41,8 +41,8 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaHTMLAttributes<H
     <textarea
       ref={ref}
       className={cn(
-        'w-full rounded-lg border border-white/[0.08] bg-white/[0.025] px-3.5 py-2.5 text-[14px] leading-[1.65] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] outline-none transition-colors resize-y',
-        'focus:border-white/[0.20] focus:bg-white/[0.04]',
+        'w-full resize-y rounded-xl border border-white/[0.075] bg-black/10 px-3.5 py-3 text-[13px] leading-[1.7] text-[var(--color-text-primary)] placeholder:text-white/20 outline-none transition-colors',
+        'focus:border-white/[0.18] focus:bg-white/[0.025]',
         className
       )}
       {...rest}
@@ -59,14 +59,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   { variant = 'outline', size = 'md', className, ...rest },
   ref
 ) {
-  const base = 'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed';
+  const base = 'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed';
   const sizes = {
     sm: 'h-8 px-3 text-[12px]',
     md: 'h-10 px-4 text-[13px]',
   };
   const variants = {
     primary: 'bg-white text-black hover:bg-white/90',
-    outline: 'border border-white/[0.08] bg-white/[0.025] text-[var(--color-text-primary)] hover:bg-white/[0.05] hover:border-white/[0.14]',
+    outline: 'border border-white/[0.08] bg-white/[0.025] text-[var(--color-text-primary)] hover:bg-white/[0.055] hover:border-white/[0.14]',
     ghost: 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-white/[0.04]',
     danger: 'text-[var(--color-text-tertiary)] hover:text-red-300',
   };
@@ -101,7 +101,7 @@ export function Field({ label, hint, children }: { label: string; hint?: string;
     <div className="flex flex-col gap-2">
       <Label>{label}</Label>
       {children}
-      {hint && <p className="text-[11px] text-[var(--color-text-tertiary)]">{hint}</p>}
+      {hint && <p className="text-[10px] leading-relaxed text-white/28">{hint}</p>}
     </div>
   );
 }
@@ -110,7 +110,7 @@ export function FormSurface({ children, className }: { children: ReactNode; clas
   return (
     <div
       className={cn(
-        'rounded-2xl border border-white/[0.10] bg-white/[0.02] p-7',
+        'rounded-2xl border border-white/[0.07] bg-white/[0.018] p-5 md:p-6',
         className
       )}
     >

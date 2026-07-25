@@ -5,8 +5,8 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { reveal, revealFadeOnly } from '@/lib/motion';
 
 /**
- * HubSelector — the hero's destination picker. Three glass tiles, one per
- * pillar (Journal / Code / Contact), so a visitor chooses where to go without
+ * HubSelector — the hero's destination picker. It exposes the main internal
+ * sections so a visitor chooses where to go without
  * scrolling. Internal anchors only: ↓ means "scrolls down this page",
  * ↗ stays reserved for external links. On mobile this doubles as the primary
  * nav (the header nav is hidden below md).
@@ -14,22 +14,29 @@ import { reveal, revealFadeOnly } from '@/lib/motion';
 interface HubSelectorProps {
   /** Reveal-cascade offset: tiles animate in after the hero's earlier beats. */
   revealOffset?: number;
+  hasBook?: boolean;
 }
 
-export function HubSelector({ revealOffset = 3 }: HubSelectorProps) {
+export function HubSelector({ revealOffset = 3, hasBook = false }: HubSelectorProps) {
   const t = useTranslations('hero');
   const reduced = useReducedMotion();
   const variants = reduced ? revealFadeOnly : reveal;
 
   const destinations = [
-    { href: '#journal', label: t('hubJournal') },
+    ...(hasBook ? [{ href: '#book', label: t('hubBook') }] : []),
     { href: '#work', label: t('hubCode') },
     { href: '#contact', label: t('hubContact') },
   ];
 
   return (
     <nav aria-label={t('hubAria')}>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div
+        className={
+          hasBook
+            ? 'grid grid-cols-1 gap-3 sm:grid-cols-3'
+            : 'grid grid-cols-1 gap-3 sm:grid-cols-2'
+        }
+      >
         {destinations.map((d, i) => (
           <div key={d.href} className="card-breathe" style={{ animationDelay: `${i * 0.9}s` }}>
             <motion.a

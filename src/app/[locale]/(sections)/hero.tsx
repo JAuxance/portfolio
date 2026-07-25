@@ -12,9 +12,10 @@ import { reveal, revealFadeOnly } from '@/lib/motion';
 interface HeroProps {
   abstract: string;
   locale: 'en' | 'fr';
+  hasBook: boolean;
 }
 
-export function Hero({ abstract }: HeroProps) {
+export function Hero({ abstract, hasBook }: HeroProps) {
   const t = useTranslations('hero');
   const reduced = useReducedMotion();
   const variants = reduced ? revealFadeOnly : reveal;
@@ -38,10 +39,8 @@ export function Hero({ abstract }: HeroProps) {
       aria-label="Hero"
     >
       <motion.div initial="hidden" animate="show" className="flex flex-col gap-11">
-        {/* Hub selector — the visitor picks a destination before anything
-            else. Internal anchors only: the hero stays outbound-link-free;
-            the first real egress on the page is the journal section. */}
-        <HubSelector revealOffset={0} />
+        {/* The visitor chooses a destination before anything else. */}
+        <HubSelector revealOffset={0} hasBook={hasBook} />
 
         <motion.div variants={variants} custom={1}>
           <ExpandableAbstract text={abstract} limit={84} />

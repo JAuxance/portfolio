@@ -5,11 +5,11 @@ import { ProjectStatus } from '@prisma/client';
 import { cn } from '@/lib/cn';
 
 const STATUS_LABELS: Record<ProjectStatus, string> = {
-  BUILDING: 'Building',
-  SHIPPED: 'Shipped',
-  LEARNING: 'Learning',
-  STUDYING: 'Studying',
-  ESSAY: 'Essay',
+  BUILDING: 'En construction',
+  SHIPPED: 'Livré',
+  LEARNING: 'En apprentissage',
+  STUDYING: 'En étude',
+  ESSAY: 'Essai',
 };
 
 interface StatusDropdownProps {
@@ -36,7 +36,7 @@ export function StatusDropdown({ value, onChange }: StatusDropdownProps) {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-10 w-full items-center justify-between gap-3 rounded-lg border border-white/[0.08] bg-white/[0.025] px-3.5 text-[13px] text-[var(--color-text-primary)] transition-colors hover:bg-white/[0.04]"
+        className="flex h-10 w-full items-center justify-between gap-3 rounded-xl border border-white/[0.08] bg-black/10 px-3.5 text-[13px] text-[var(--color-text-primary)] transition-colors hover:bg-white/[0.03]"
       >
         <span className="flex items-center gap-2">
           <span

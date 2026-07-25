@@ -1,26 +1,57 @@
+import { Database, KeyRound, UserRound } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { PageShell } from '@/components/admin/page-shell';
-import { FormSurface, Field } from '@/components/admin/ui';
+
+const rows = [
+  {
+    icon: UserRound,
+    label: 'Compte administrateur',
+    key: 'account',
+  },
+  {
+    icon: Database,
+    label: 'Stockage des contenus',
+    value: 'PostgreSQL · Prisma',
+  },
+  {
+    icon: KeyRound,
+    label: 'Mot de passe',
+    value: 'Géré par la configuration du serveur',
+  },
+];
 
 export default async function SettingsPage() {
   const session = await auth();
+
   return (
-    <PageShell breadcrumb={['System', 'Settings']} title="Settings" subtitle="Read-only system info.">
-      <FormSurface className="flex flex-col gap-5">
-        <Field label="Signed in as">
-          <p className="text-[14px] text-[var(--color-text-primary)]">{session?.user?.email}</p>
-        </Field>
-        <Field label="Database">
-          <p className="font-mono text-[12px] text-[var(--color-text-secondary)]" style={{ fontFamily: 'var(--font-mono)' }}>
-            Postgres via Prisma. Migrations live in <code>prisma/migrations</code>.
-          </p>
-        </Field>
-        <Field label="Password rotation">
-          <p className="text-[13px] text-[var(--color-text-secondary)]">
-            Coming soon — rotate via SQL or re-seed for now.
-          </p>
-        </Field>
-      </FormSurface>
+    <PageShell
+      breadcrumb={['Système', 'Réglages']}
+      title="Réglages"
+      subtitle="Les informations essentielles de l’administration, regroupées au même endroit."
+    >
+      <div className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.07] bg-white/[0.015]">
+        {rows.map((row) => {
+          const Icon = row.icon;
+          const value =
+            row.key === 'account' ? session?.user?.email ?? '—' : row.value;
+          return (
+            <div
+              key={row.label}
+              className="grid gap-3 px-5 py-5 sm:grid-cols-[220px_minmax(0,1fr)] sm:items-center"
+            >
+              <span className="flex items-center gap-3 text-[12px] text-white/45">
+                <Icon size={14} />
+                {row.label}
+              </span>
+              <span className="text-[13px] text-white/75">{value}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-4 text-[10px] leading-relaxed text-white/25">
+        Les changements techniques sensibles restent volontairement hors de
+        l’interface afin d’éviter les erreurs accidentelles.
+      </p>
     </PageShell>
   );
 }

@@ -72,13 +72,13 @@ async function main() {
       },
       {
         label: 'WRITING',
-        titleEn: 'The Substack journal',
-        titleFr: 'Le journal Substack',
+        titleEn: 'The book — written here',
+        titleFr: 'Le livre — écrit ici',
         bodyEn:
-          'Writing the first entries of the road-to-the-PhD journal — what I learn, what breaks, what changes my mind. It plugs into the Journal section the moment it goes live.',
+          'Writing the road toward ML research as a real book, chapter by chapter, directly inside this portfolio.',
         bodyFr:
-          "J'écris les premières entrées du journal de route vers le doctorat — ce que j'apprends, ce qui casse, ce qui me fait changer d'avis. Il se branchera dans la section Journal dès la mise en ligne.",
-        stack: 'Substack',
+          "J'écris la route vers la recherche ML comme un vrai livre, chapitre après chapitre, directement dans ce portfolio.",
+        stack: 'Book Studio · Portfolio',
         order: 2,
         published: true,
       },

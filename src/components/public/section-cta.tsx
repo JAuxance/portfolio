@@ -10,8 +10,7 @@ import { duration, ease } from '@/lib/motion';
  *
  * Two registers:
  *   · 'text'  — quiet mono link with ↗ (the site-wide egress glyph)
- *   · 'solid' — inverted pill; reserved for the page's visual apex
- *               (the Journal subscribe CTA). Use sparingly.
+ *   · 'solid' — inverted pill; reserved for a page's visual apex.
  */
 interface SectionCtaProps {
   hint?: string;
@@ -60,8 +59,7 @@ export function SectionCta({ hint, label, href, variant = 'text', className }: S
 }
 
 /**
- * The pill CTA, also used standalone (journal empty-state card, project
- * detail actions). 'solid' = inverted apex pill; 'glass' = bordered glass.
+ * The pill CTA, also used standalone for project detail actions.
  */
 export function CtaPill({
   href,

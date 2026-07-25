@@ -26,10 +26,10 @@ export function MediaDrop({ onUploaded }: MediaDropProps) {
       fd.append('file', file);
       const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
       const json = (await res.json()) as { url?: string; kind?: 'image' | 'video'; error?: string };
-      if (!res.ok || !json.url) throw new Error(json.error ?? 'upload failed');
+      if (!res.ok || !json.url) throw new Error(json.error ?? 'Échec de l’envoi');
       onUploaded(json.url, json.kind ?? 'image');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'upload failed');
+      setError(e instanceof Error ? e.message : 'Échec de l’envoi');
     } finally {
       setBusy(false);
     }
@@ -64,7 +64,7 @@ export function MediaDrop({ onUploaded }: MediaDropProps) {
         )}
       >
         <span className="text-[13px] text-[var(--color-text-secondary)]">
-          {busy ? 'Uploading…' : 'Drop an image or video here, or click to browse'}
+          {busy ? 'Envoi…' : 'Dépose une image ou une vidéo, ou clique pour choisir'}
         </span>
         <span
           className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]"

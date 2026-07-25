@@ -1,51 +1,92 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { ExternalLink, Menu } from 'lucide-react';
 import { useSaveState } from './save-state-context';
-import { Button } from './ui';
 
 interface TopbarProps {
-  breadcrumb: string[];
+  onOpenNavigation: () => void;
 }
 
-export function Topbar({ breadcrumb }: TopbarProps) {
+const ROUTE_LABELS: Record<string, string> = {
+  '/admin': 'Tableau de bord',
+  '/admin/book': 'Studio d’écriture',
+  '/admin/work': 'Projets',
+  '/admin/now': 'En ce moment',
+  '/admin/profile': 'Profil',
+  '/admin/research': 'Recherche',
+  '/admin/trajectory': 'Parcours',
+  '/admin/references': 'Références',
+  '/admin/settings': 'Réglages',
+};
+
+export function Topbar({ onOpenNavigation }: TopbarProps) {
   const { status, lastSaved } = useSaveState();
+  const pathname = usePathname() ?? '/admin';
+  const route =
+    Object.keys(ROUTE_LABELS)
+      .sort((a, b) => b.length - a.length)
+      .find((candidate) =>
+        candidate === '/admin'
+          ? pathname === candidate
+          : pathname.startsWith(candidate)
+      ) ?? '/admin';
 
   const indicator =
     status === 'saving'
-      ? 'Saving…'
+      ? 'Enregistrement…'
       : status === 'error'
-      ? 'Save failed'
-      : lastSaved
-      ? `All changes saved · ${formatRelative(lastSaved)}`
-      : 'All changes saved';
+        ? 'Échec de l’enregistrement'
+        : lastSaved
+          ? `Enregistré · ${formatRelative(lastSaved)}`
+          : 'À jour';
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-white/[0.06] bg-[var(--color-bg)]/80 px-12 backdrop-blur">
-      <nav
-        className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]"
-        style={{ fontFamily: 'var(--font-mono)' }}
-      >
-        {breadcrumb.map((part, i) => (
-          <span key={i} className={i === breadcrumb.length - 1 ? 'text-[var(--color-text-primary)]' : undefined}>
-            {part}
-            {i < breadcrumb.length - 1 && <span className="px-2 opacity-50">/</span>}
-          </span>
-        ))}
-      </nav>
-      <div className="flex items-center gap-4">
-        <span className="text-[12px] text-[var(--color-text-tertiary)]">{indicator}</span>
-        <Button variant="primary" size="sm">
-          Publish
-        </Button>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-white/[0.06] bg-[#0b0b0d]/88 px-4 backdrop-blur-xl sm:px-6 md:px-8">
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          onClick={onOpenNavigation}
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-white/55 hover:bg-white/[0.05] hover:text-white md:hidden"
+          aria-label="Ouvrir la navigation"
+        >
+          <Menu size={18} />
+        </button>
+        <span className="truncate text-[12px] font-medium text-white/70">
+          {ROUTE_LABELS[route]}
+        </span>
+      </div>
+      <div className="flex items-center gap-3 sm:gap-5">
+        <span
+          className={
+            status === 'error'
+              ? 'text-[11px] text-red-300'
+              : 'text-[11px] text-white/35'
+          }
+        >
+          {indicator}
+        </span>
+        <Link
+          href="/fr"
+          target="_blank"
+          className="hidden items-center gap-2 rounded-lg px-2.5 py-1.5 text-[11px] text-white/45 hover:bg-white/[0.04] hover:text-white sm:inline-flex"
+        >
+          Voir le site
+          <ExternalLink size={12} />
+        </Link>
       </div>
     </header>
   );
 }
 
-function formatRelative(d: Date) {
-  const secs = Math.round((Date.now() - d.getTime()) / 1000);
-  if (secs < 30) return 'just now';
-  if (secs < 90) return '1 min ago';
-  if (secs < 3600) return `${Math.round(secs / 60)} min ago`;
-  return d.toLocaleTimeString();
+function formatRelative(date: Date) {
+  const seconds = Math.round((Date.now() - date.getTime()) / 1000);
+  if (seconds < 30) return 'à l’instant';
+  if (seconds < 90) return 'il y a 1 min';
+  if (seconds < 3600) return `il y a ${Math.round(seconds / 60)} min`;
+  return date.toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }

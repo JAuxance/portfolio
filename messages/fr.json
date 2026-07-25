@@ -1,7 +1,7 @@
 {
   "nav": {
+    "book": "Livre",
     "work": "Travaux",
-    "journal": "Journal",
     "contact": "Contact"
   },
   "hero": {
@@ -14,7 +14,7 @@
     "heatherLabel": "Heather · Assistante IA",
     "heatherThinking": "Heather réfléchit…",
     "greeting": "Hey toi.",
-    "hubJournal": "Journal · Substack",
+    "hubBook": "Livre · Manuscrit",
     "hubCode": "Code · GitHub",
     "hubContact": "Contact",
     "hubAria": "Piliers du site"
@@ -40,12 +40,21 @@
     "live": "Démo",
     "allCode": "Tout le code · GitHub"
   },
-  "journal": {
-    "title": "Notes de route vers le doctorat.",
-    "via": "Substack",
-    "emptyLabel": "Bientôt",
-    "empty": "La première entrée s'écrit en ce moment.",
-    "subscribe": "S'abonner sur Substack"
+  "book": {
+    "eyebrow": "Manuscrit en cours",
+    "publication": "Écrit et publié ici",
+    "sectionTitle": "Un livre, chapitre après chapitre.",
+    "read": "Entrer dans le livre",
+    "progress": "Progression",
+    "words": "mots",
+    "chapters": "chapitres publiés",
+    "chapter": "Chapitre",
+    "minuteRead": "min de lecture",
+    "contents": "Sommaire",
+    "back": "Retour au livre",
+    "previous": "Chapitre précédent",
+    "next": "Chapitre suivant",
+    "draftNotice": "De nouveaux chapitres sont en cours d’écriture."
   },
   "contact": {
     "title": "On se parle.",

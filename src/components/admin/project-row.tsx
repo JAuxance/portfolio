@@ -1,113 +1,78 @@
 'use client';
 
+import { ExternalLink, GripVertical } from 'lucide-react';
 import type { Project } from '@prisma/client';
-import { cn } from '@/lib/cn';
 import { StatusPill } from '@/components/public/status-pill';
 
 interface ProjectRowProps {
   project: Project;
-  selected: boolean;
   onSelect: () => void;
   onDragStart: () => void;
-  onDragOver: (e: React.DragEvent) => void;
+  onDragOver: (event: React.DragEvent) => void;
   onDrop: () => void;
 }
 
-export function ProjectRow({ project, selected, onSelect, onDragStart, onDragOver, onDrop }: ProjectRowProps) {
+export function ProjectRow({
+  project,
+  onSelect,
+  onDragStart,
+  onDragOver,
+  onDrop,
+}: ProjectRowProps) {
   return (
     <div
       draggable
       onDragStart={onDragStart}
-      onDragOver={(e) => {
-        e.preventDefault();
-        onDragOver(e);
+      onDragOver={(event) => {
+        event.preventDefault();
+        onDragOver(event);
       }}
       onDrop={onDrop}
-      onClick={onSelect}
-      className={cn(
-        'group grid cursor-pointer grid-cols-[24px_100px_1fr_260px_110px_60px] items-center gap-4 rounded-[10px] border px-4 py-3 transition-colors',
-        selected
-          ? 'border-white/[0.14] bg-white/[0.04]'
-          : 'border-white/[0.06] bg-white/[0.015] hover:bg-white/[0.03] hover:border-white/[0.10]'
-      )}
+      className="group grid grid-cols-[18px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-transparent px-3 py-3 transition-colors hover:bg-white/[0.025]"
     >
-      <DragHandle />
-      <StatusPill status={project.status} />
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="truncate text-[14px] font-medium text-[var(--color-text-primary)]" style={{ letterSpacing: '-0.015em' }}>
-            {project.nameEn}
+      <GripVertical size={14} className="text-white/20" />
+      <button type="button" onClick={onSelect} className="min-w-0 text-left">
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="truncate text-[13px] font-medium text-white/75">
+            {project.nameFr}
           </span>
+          <StatusPill status={project.status} locale="fr" />
           {project.featured && (
-            <span
-              className="font-mono text-[9px] uppercase tracking-[0.18em] rounded-sm bg-white/[0.06] px-1.5 py-0.5 text-[var(--color-text-secondary)]"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            >
-              Featured
+            <span className="rounded-full bg-white/[0.05] px-2 py-0.5 font-mono text-[8px] uppercase tracking-[0.13em] text-white/35">
+              Sélection
             </span>
           )}
           {!project.published && (
-            <span
-              className="font-mono text-[9px] uppercase tracking-[0.18em] rounded-sm bg-amber-300/10 px-1.5 py-0.5 text-amber-200/80"
-              style={{ fontFamily: 'var(--font-mono)' }}
-            >
-              Draft
+            <span className="rounded-full bg-amber-300/[0.08] px-2 py-0.5 font-mono text-[8px] uppercase tracking-[0.13em] text-amber-100/45">
+              Brouillon
             </span>
           )}
-        </div>
-        <p className="mt-1 line-clamp-1 text-[12px] text-[var(--color-text-secondary)]">{project.taglineEn}</p>
-      </div>
-      <p
-        className="line-clamp-1 font-mono text-[11px] text-[var(--color-text-tertiary)]"
-        style={{ fontFamily: 'var(--font-mono)' }}
-      >
-        {project.stack.join(' · ')}
-      </p>
-      <p
-        className="font-mono text-[11px] text-[var(--color-text-tertiary)]"
-        style={{ fontFamily: 'var(--font-mono)' }}
-      >
-        {formatDate(project.updatedAt)}
-      </p>
-      <div className="flex items-center justify-end gap-2 text-[var(--color-text-tertiary)]">
-        <span className="opacity-0 group-hover:opacity-100">⋯</span>
-        <a
-          href={`/en/work/${project.slug}`}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="hover:text-white"
+        </span>
+        <span className="mt-1.5 block truncate text-[10px] text-white/28">
+          {project.taglineFr}
+          {project.stack.length > 0 ? ` · ${project.stack.join(' · ')}` : ''}
+        </span>
+      </button>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onSelect}
+          className="rounded-lg px-3 py-2 text-[10px] text-white/35 hover:bg-white/[0.05] hover:text-white"
         >
-          ↗
-        </a>
+          Modifier
+        </button>
+        {project.published && (
+          <a
+            href={`/fr/work/${project.slug}`}
+            target="_blank"
+            rel="noreferrer"
+            className="grid h-8 w-8 place-items-center rounded-lg text-white/25 hover:bg-white/[0.05] hover:text-white"
+            aria-label={`Voir ${project.nameFr} en ligne`}
+          >
+            <ExternalLink size={13} />
+          </a>
+        )}
       </div>
     </div>
   );
-}
-
-function DragHandle() {
-  return (
-    <span aria-hidden className="grid grid-cols-2 gap-[3px] text-[var(--color-text-tertiary)]">
-      <span className="h-[3px] w-[3px] rounded-full bg-current" />
-      <span className="h-[3px] w-[3px] rounded-full bg-current" />
-      <span className="h-[3px] w-[3px] rounded-full bg-current" />
-      <span className="h-[3px] w-[3px] rounded-full bg-current" />
-      <span className="h-[3px] w-[3px] rounded-full bg-current" />
-      <span className="h-[3px] w-[3px] rounded-full bg-current" />
-    </span>
-  );
-}
-
-function formatDate(d: Date | string) {
-  const date = typeof d === 'string' ? new Date(d) : d;
-  const now = new Date();
-  const ms = now.getTime() - date.getTime();
-  const mins = Math.round(ms / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.round(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  return date.toLocaleDateString();
 }

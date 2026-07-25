@@ -6,7 +6,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { NavLink } from './nav-link';
 import { ThemeToggle } from './theme-toggle';
 
-export function Header() {
+export function Header({ showBook = false }: { showBook?: boolean }) {
   const t = useTranslations('nav');
   const tLocale = useTranslations('locale');
   const locale = useLocale();
@@ -39,7 +39,7 @@ export function Header() {
             mirrors the scroll order; Now is omitted (it sits right under
             the hero, the first scroll reveals it). */}
         <nav className="hidden items-center gap-8 md:flex">
-          <NavLink href={`/${locale}#journal`}>{t('journal')}</NavLink>
+          {showBook && <NavLink href={`/${locale}#book`}>{t('book')}</NavLink>}
           <NavLink href={`/${locale}#work`}>{t('work')}</NavLink>
           <NavLink href={`/${locale}#contact`}>{t('contact')}</NavLink>
         </nav>

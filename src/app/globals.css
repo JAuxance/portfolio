@@ -20,6 +20,7 @@
   --font-display: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+  --font-book: var(--font-source-serif), Georgia, "Times New Roman", serif;
 
   --radius-glass: 16px;
 
@@ -190,5 +191,304 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Long-form reading — used by both the private writing studio preview and
+   published chapters. The narrow measure keeps the book calmer than the
+   portfolio's card-based surfaces. */
+.book-prose {
+  color: var(--color-text-secondary);
+  font-family: var(--font-book);
+  font-size: clamp(18px, 1.5vw, 20px);
+  line-height: 1.78;
+  letter-spacing: -0.008em;
+  overflow-wrap: anywhere;
+}
+
+.book-prose > * + * {
+  margin-top: 1.35em;
+}
+
+.book-prose h2,
+.book-prose h3,
+.book-prose h4 {
+  color: var(--color-text-primary);
+  font-family: var(--font-book);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+.book-prose h2 {
+  margin-top: 2.5em;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+}
+
+.book-prose h3 {
+  margin-top: 2.2em;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+}
+
+.book-prose h4 {
+  margin-top: 2em;
+  font-size: 1.15rem;
+}
+
+.book-prose strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.book-prose em {
+  color: var(--color-text-primary);
+}
+
+.book-prose a {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--color-text-primary) 35%, transparent);
+  text-underline-offset: 0.2em;
+}
+
+.book-prose blockquote {
+  border-left: 2px solid var(--color-text-tertiary);
+  color: var(--color-text-primary);
+  font-family: var(--font-book);
+  font-size: 1.12em;
+  font-style: italic;
+  padding-left: 1.25em;
+}
+
+.book-prose ul,
+.book-prose ol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+  padding-left: 1.4em;
+}
+
+.book-prose ul {
+  list-style: disc;
+}
+
+.book-prose ol {
+  list-style: decimal;
+}
+
+.book-prose code {
+  border: 1px solid var(--color-glass-border);
+  border-radius: 5px;
+  background: var(--color-glass-fill);
+  color: var(--color-text-primary);
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 0.12em 0.35em;
+}
+
+.book-prose pre {
+  overflow-x: auto;
+  border: 1px solid var(--color-glass-border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--color-bg-elevated) 90%, black);
+  padding: 1.1em 1.25em;
+}
+
+.book-prose pre code {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.book-prose hr {
+  border: 0;
+  border-top: 1px solid var(--color-glass-border);
+  margin-block: 3em;
+}
+
+.book-editor {
+  field-sizing: content;
+  min-height: 64vh;
+}
+
+.book-editor-title {
+  font-family: var(--font-book);
+  font-size: clamp(2.4rem, 5vw, 4.25rem);
+  font-weight: 700;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.book-editor-deck {
+  font-family: var(--font-book);
+  font-size: clamp(1.15rem, 2.2vw, 1.45rem);
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.book-editor-writing {
+  font-family: var(--font-book);
+  font-size: clamp(18px, 1.5vw, 20px);
+  letter-spacing: -0.008em;
+  line-height: 1.78;
+}
+
+.book-editor-content {
+  min-height: 64vh;
+  padding-top: 2rem;
+  color: #282622;
+  outline: none;
+}
+
+.book-editor-content > * + * {
+  margin-top: 1.35em;
+}
+
+.book-editor-content h2,
+.book-editor-content h3 {
+  color: #24221f;
+  font-family: var(--font-book);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+}
+
+.book-editor-content h2 {
+  margin-top: 2.4em;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+}
+
+.book-editor-content h3 {
+  margin-top: 2em;
+  font-size: clamp(1.35rem, 4vw, 1.8rem);
+}
+
+.book-editor-content blockquote {
+  border-left: 2px solid #aaa49a;
+  color: #24221f;
+  font-style: italic;
+  padding-left: 1.25em;
+}
+
+.book-editor-content ul,
+.book-editor-content ol {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55em;
+  padding-left: 1.4em;
+}
+
+.book-editor-content ul {
+  list-style: disc;
+}
+
+.book-editor-content ol {
+  list-style: decimal;
+}
+
+.book-editor-content a {
+  color: #24221f;
+  text-decoration: underline;
+  text-decoration-color: rgba(36, 34, 31, 0.35);
+  text-underline-offset: 0.2em;
+}
+
+.book-editor-content code {
+  border: 1px solid #ded9d0;
+  border-radius: 5px;
+  background: #f1eee8;
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 0.12em 0.35em;
+}
+
+.book-editor-content pre {
+  overflow-x: auto;
+  border: 1px solid #ded9d0;
+  border-radius: 10px;
+  background: #f1eee8;
+  padding: 1.1em 1.25em;
+}
+
+.book-editor-content pre code {
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+.book-editor-content hr {
+  border: 0;
+  border-top: 1px solid #ded9d0;
+  margin-block: 3em;
+}
+
+.book-editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: #aaa49a;
+  pointer-events: none;
+}
+
+.book-reading-paper {
+  background: #fbfaf7;
+  border: 1px solid #e7e3da;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.16);
+  color: #24221f;
+}
+
+.book-reading-paper .book-prose,
+.book-studio-paper .book-prose {
+  color: #4f4b45;
+}
+
+.book-reading-paper .book-prose h2,
+.book-reading-paper .book-prose h3,
+.book-reading-paper .book-prose h4,
+.book-reading-paper .book-prose strong,
+.book-reading-paper .book-prose em,
+.book-reading-paper .book-prose a,
+.book-reading-paper .book-prose blockquote,
+.book-studio-paper .book-prose h2,
+.book-studio-paper .book-prose h3,
+.book-studio-paper .book-prose h4,
+.book-studio-paper .book-prose strong,
+.book-studio-paper .book-prose em,
+.book-studio-paper .book-prose a,
+.book-studio-paper .book-prose blockquote {
+  color: #24221f;
+}
+
+.book-reading-paper .book-prose a,
+.book-studio-paper .book-prose a {
+  text-decoration-color: rgba(36, 34, 31, 0.35);
+}
+
+.book-reading-paper .book-prose blockquote,
+.book-studio-paper .book-prose blockquote {
+  border-color: #aaa49a;
+}
+
+.book-reading-paper .book-prose code,
+.book-studio-paper .book-prose code {
+  border-color: #ded9d0;
+  background: #f1eee8;
+  color: #24221f;
+}
+
+.book-reading-paper .book-prose pre,
+.book-studio-paper .book-prose pre {
+  border-color: #ded9d0;
+  background: #f1eee8;
+}
+
+.book-reading-paper .book-prose hr,
+.book-studio-paper .book-prose hr {
+  border-color: #ded9d0;
+}
+
+@media (max-width: 1023px) {
+  .book-studio-grid {
+    min-height: auto;
   }
 }
