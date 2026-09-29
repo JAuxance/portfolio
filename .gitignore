@@ -27,3 +27,7 @@ next-env.d.ts
 
 # admin media uploads (local CMS content, runtime-written)
 /uploads
+
+# Windows download metadata (copied over from NTFS) + local pnpm store
+*:Zone.Identifier
+.pnpm-store/

@@ -32,6 +32,9 @@ ENV DATABASE_URL=${DATABASE_URL}
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
+# pnpm stores Prisma's native engine inside its virtual store. Materialize the
+# directory expected by the minimal standalone runtime image.
+RUN cp -r node_modules/.pnpm/@prisma+client@*/node_modules/.prisma node_modules/.prisma
 
 # ── runner: tiny image, runs the standalone server as non-root ──
 FROM node:22-bookworm-slim AS runner

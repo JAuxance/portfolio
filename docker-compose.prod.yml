@@ -15,10 +15,10 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: pw
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: portfolio
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -37,7 +37,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://postgres:pw@db:5432/portfolio
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/portfolio
     depends_on:
       db:
         condition: service_healthy
@@ -50,19 +50,18 @@ services:
       context: .
       dockerfile: Dockerfile
       target: runner
-      # next build needs to reach the (already-seeded) Postgres published on the
-      # host. host-gateway makes host.docker.internal resolve on Linux & Desktop.
+      # Build on the host network so prerendering can query PostgreSQL through
+      # its loopback-only published port (never exposed to the Internet).
+      network: host
       args:
-        DATABASE_URL: ${BUILD_DATABASE_URL:-postgresql://postgres:pw@host.docker.internal:5432/portfolio}
-      extra_hosts:
-        - "host.docker.internal:host-gateway"
+        DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@127.0.0.1:5432/portfolio
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://postgres:pw@db:5432/portfolio
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/portfolio
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       # Admin media uploads must outlive container rebuilds — the DB keeps
       # /uploads/… paths in Project.heroImage.
