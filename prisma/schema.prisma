@@ -169,5 +169,11 @@ model AdminUser {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
+  // TOTP 2FA (RFC 6238). The secret is written when setup starts; login only
+  // requires a code once `totpEnabled` is flipped by a confirmed first code.
+  totpSecret   String?
+  totpEnabled  Boolean  @default(false)
+  // Last accepted 30s time step, so a code can't be replayed.
+  totpLastStep Int?
   createdAt    DateTime @default(now())
 }

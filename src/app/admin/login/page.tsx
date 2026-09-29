@@ -12,6 +12,8 @@ export default function LoginPage() {
   const params = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [code, setCode] = useState('');
+  const [needsCode, setNeedsCode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -22,12 +24,22 @@ export default function LoginPage() {
     const response = await signIn('credentials', {
       email,
       password,
+      code,
       redirect: false,
       callbackUrl: '/admin',
     });
     setLoading(false);
     if (response?.error) {
-      setError('Email ou mot de passe incorrect.');
+      if (response.code === 'totp_required') {
+        setNeedsCode(true);
+      } else if (response.code === 'totp_invalid') {
+        setCode('');
+        setError('Code invalide ou expiré. Réessaie avec le code actuel.');
+      } else {
+        setNeedsCode(false);
+        setCode('');
+        setError('Email ou mot de passe incorrect.');
+      }
       return;
     }
     router.push(params?.get('callbackUrl') ?? '/admin');
@@ -85,6 +97,21 @@ export default function LoginPage() {
               required
             />
           </Field>
+          {needsCode && (
+            <Field label="Code de l’application (2FA)">
+              <Input
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9 ]*"
+                maxLength={7}
+                placeholder="123 456"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                required
+                autoFocus
+              />
+            </Field>
+          )}
           {error && <p className="text-[12px] text-red-300">{error}</p>}
           <Button type="submit" variant="primary" disabled={loading}>
             {loading ? 'Connexion…' : 'Se connecter'}

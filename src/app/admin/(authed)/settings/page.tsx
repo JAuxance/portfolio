@@ -1,6 +1,8 @@
 import { Database, KeyRound, UserRound } from 'lucide-react';
 import { auth } from '@/lib/auth';
+import { db } from '@/lib/db';
 import { PageShell } from '@/components/admin/page-shell';
+import { TwoFactor } from './two-factor';
 
 const rows = [
   {
@@ -22,6 +24,12 @@ const rows = [
 
 export default async function SettingsPage() {
   const session = await auth();
+  const admin = session?.user?.id
+    ? await db.adminUser.findUnique({
+        where: { id: session.user.id },
+        select: { totpEnabled: true },
+      })
+    : null;
 
   return (
     <PageShell
@@ -48,6 +56,7 @@ export default async function SettingsPage() {
           );
         })}
       </div>
+      <TwoFactor enabled={admin?.totpEnabled ?? false} />
       <p className="mt-4 text-[10px] leading-relaxed text-white/25">
         Les changements techniques sensibles restent volontairement hors de
         l’interface afin d’éviter les erreurs accidentelles.
