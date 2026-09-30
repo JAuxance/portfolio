@@ -45,7 +45,17 @@ export default async function HomePage({ params }: HomePageProps) {
   return (
     <>
       <Hero abstract={abstract} locale={loc} hasBook={Boolean(book)} />
-      <NowSection items={nowItems} locale={loc} />
+      <NowSection
+        items={nowItems}
+        locale={loc}
+        projects={projects.map((p) => ({
+          slug: p.slug,
+          name: loc === 'fr' ? p.nameFr : p.nameEn,
+        }))}
+        email={profile.emailPublic}
+        github={profile.github}
+        twitter={profile.twitter}
+      />
       {book && (
         <BookSection
           locale={loc}

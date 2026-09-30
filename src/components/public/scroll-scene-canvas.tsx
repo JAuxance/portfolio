@@ -291,6 +291,14 @@ function Comet({ dot, shown, light }: CometProps) {
     from: new THREE.Vector3(),
     vel: new THREE.Vector3(),
   });
+  // Easter egg: the `comet` terminal command asks for one right now.
+  useEffect(() => {
+    const summon = () => {
+      if (!st.current.active) st.current.next = 0;
+    };
+    window.addEventListener('portfolio:comet', summon);
+    return () => window.removeEventListener('portfolio:comet', summon);
+  }, []);
   const bg = useMemo(() => new THREE.Color(light ? '#F6F5F1' : '#000000'), [light]);
   const tmpA = useMemo(() => new THREE.Color(), []);
   const DURATION = 2.4;

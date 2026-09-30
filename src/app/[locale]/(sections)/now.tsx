@@ -5,10 +5,15 @@ import { useTranslations } from 'next-intl';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 import type { NowItem } from '@prisma/client';
 import { SectionTitle } from '@/components/public/section-title';
+import { NowTerminal, type TerminalProject } from '@/components/public/now-terminal';
 
 interface NowSectionProps {
   items: NowItem[];
   locale: 'en' | 'fr';
+  projects: TerminalProject[];
+  email: string;
+  github: string | null;
+  twitter: string | null;
 }
 
 const mono = { fontFamily: 'var(--font-mono)' } as const;
@@ -20,7 +25,7 @@ const GAP_MS = 260;
  * turn once the section scrolls into view, then its detail line fades in.
  * Reduced motion shows everything at once.
  */
-export function NowSection({ items, locale }: NowSectionProps) {
+export function NowSection({ items, locale, projects, email, github, twitter }: NowSectionProps) {
   const t = useTranslations('now');
   const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
@@ -76,20 +81,18 @@ export function NowSection({ items, locale }: NowSectionProps) {
           ))}
         </ol>
 
-        <div
-          className="flex items-center gap-2 border-t border-[var(--color-glass-border)] px-5 py-3 font-mono text-[13px] text-[var(--color-text-tertiary)] md:px-7"
-          style={mono}
-          aria-hidden
-        >
-          <span>$</span>
-          {finished && (
-            <motion.span
-              className="inline-block h-[1em] w-[0.55em] bg-[var(--color-text-primary)]"
-              animate={reduced ? undefined : { opacity: [1, 0, 1] }}
-              transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          )}
-        </div>
+        <NowTerminal
+          locale={locale}
+          projects={projects}
+          now={items.map((i) => ({
+            label: i.label,
+            title: locale === 'fr' ? i.titleFr : i.titleEn,
+          }))}
+          email={email}
+          github={github}
+          twitter={twitter}
+          idle={finished}
+        />
       </motion.div>
     </section>
   );
