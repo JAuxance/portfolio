@@ -271,6 +271,110 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
   );
 }
 
+/* ── Comets ────────────────────────────────────────────────────────────
+   A rare streak across the view (one every ~12–25s). Head dot + a tail
+   that fades to nothing, tinted by the shared accent.                     */
+
+interface CometProps {
+  dot: THREE.Texture;
+  shown: React.MutableRefObject<THREE.Color>;
+  light: boolean;
+}
+
+function Comet({ dot, shown, light }: CometProps) {
+  const head = useRef<THREE.Points>(null);
+  const tail = useRef<THREE.LineSegments>(null);
+  const st = useRef({
+    next: 5 + Math.random() * 5,
+    start: 0,
+    active: false,
+    from: new THREE.Vector3(),
+    vel: new THREE.Vector3(),
+  });
+  const bg = useMemo(() => new THREE.Color(light ? '#F6F5F1' : '#000000'), [light]);
+  const tmpA = useMemo(() => new THREE.Color(), []);
+  const DURATION = 2.4;
+  const TAIL = 11;
+
+  const tailGeo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(6), 3));
+    return g;
+  }, []);
+
+  useFrame((state) => {
+    const t = state.clock.elapsedTime;
+    const c = st.current;
+    if (!c.active && t >= c.next) {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const cam = state.camera.position;
+      c.from.set(cam.x - side * 11, cam.y + 1 + Math.random() * 7, cam.z - 14 - Math.random() * 8);
+      c.vel.set(side * (9 + Math.random() * 3), -(2.5 + Math.random() * 3), 0);
+      c.start = t;
+      c.active = true;
+    }
+    if (!head.current || !tail.current) return;
+    head.current.visible = tail.current.visible = c.active;
+    if (!c.active) return;
+
+    const k = (t - c.start) / DURATION;
+    if (k >= 1) {
+      c.active = false;
+      c.next = t + 12 + Math.random() * 13;
+      head.current.visible = tail.current.visible = false;
+      return;
+    }
+    const a = Math.min(1, k / 0.15) * Math.min(1, (1 - k) / 0.3);
+    const dt = t - c.start;
+    head.current.position.set(
+      c.from.x + c.vel.x * dt,
+      c.from.y + c.vel.y * dt,
+      c.from.z + c.vel.z * dt
+    );
+
+    const dir = c.vel.clone().normalize().multiplyScalar(-TAIL);
+    const pos = tailGeo.attributes.position as THREE.BufferAttribute;
+    const hp = head.current.position;
+    pos.setXYZ(0, hp.x, hp.y, hp.z);
+    pos.setXYZ(1, hp.x + dir.x, hp.y + dir.y, hp.z + dir.z);
+    pos.needsUpdate = true;
+
+    // Head keeps the accent; the tail fades toward the background.
+    const col = tailGeo.attributes.color as THREE.BufferAttribute;
+    const headCol = tmpA.copy(bg).lerp(shown.current, a);
+    col.setXYZ(0, headCol.r, headCol.g, headCol.b);
+    col.setXYZ(1, bg.r, bg.g, bg.b);
+    col.needsUpdate = true;
+
+    const mat = head.current.material as THREE.PointsMaterial;
+    mat.color.copy(shown.current);
+    mat.opacity = a;
+  });
+
+  const blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+  return (
+    <>
+      <points ref={head} visible={false}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[new Float32Array([0, 0, 0]), 3]} />
+        </bufferGeometry>
+        <pointsMaterial
+          size={1.1}
+          sizeAttenuation
+          transparent
+          map={dot}
+          depthWrite={false}
+          blending={blending}
+        />
+      </points>
+      <lineSegments ref={tail} geometry={tailGeo} visible={false}>
+        <lineBasicMaterial vertexColors transparent depthWrite={false} blending={blending} />
+      </lineSegments>
+    </>
+  );
+}
+
 interface SceneProps {
   light: boolean;
   animated: boolean;
@@ -363,6 +467,7 @@ function Scene({ light, animated, count }: SceneProps) {
           blending={blending}
         />
       </points>
+      {animated && <Comet dot={dot} shown={shownRef} light={light} />}
       {PLANETS.map((spec, i) => (
         <Planet
           key={i}
