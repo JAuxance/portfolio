@@ -1,11 +1,9 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { db } from '@/lib/db';
 import { locales } from '@/lib/i18n-config';
 import { StatusPill } from '@/components/public/status-pill';
 import { ProjectStage, type StageScene } from '@/components/public/project-stage';
-import { BuildIn } from '@/components/public/build-in';
 import { CtaPill } from '@/components/public/section-cta';
 import type { ArchitectureLayer, Decision, Lesson } from '@/types/content';
 
@@ -27,15 +25,6 @@ export default async function ProjectPage({ params }: PageProps) {
 
   const project = await db.project.findUnique({ where: { slug } });
   if (!project || !project.published) notFound();
-
-  const all = await db.project.findMany({
-    where: { published: true },
-    orderBy: { order: 'asc' },
-    select: { slug: true, nameEn: true, nameFr: true, order: true },
-  });
-  const idx = all.findIndex((p) => p.slug === slug);
-  const prev = idx > 0 ? all[idx - 1] : null;
-  const next = idx < all.length - 1 ? all[idx + 1] : null;
 
   const name = loc === 'fr' ? project.nameFr : project.nameEn;
   const tagline = loc === 'fr' ? project.taglineFr : project.taglineEn;
@@ -86,10 +75,33 @@ export default async function ProjectPage({ params }: PageProps) {
       {/* One pinned, centered view: intro first, then each chapter in place. */}
       <ProjectStage
         key={`${slug}-stage`}
-        name={name}
         backHref={`/${locale}#work`}
         backLabel={t('back')}
         scenes={scenes}
+        outro={
+          project.repoUrl || project.liveUrl ? (
+            <div className="flex flex-col items-center gap-8">
+              <h2
+                className="text-[40px] font-semibold leading-[1] text-[var(--color-text-primary)] md:text-[72px]"
+                style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
+              >
+                {name}
+              </h2>
+              {(project.repoUrl || project.liveUrl) && (
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {project.liveUrl ? (
+                    <>
+                      <CtaPill href={project.liveUrl} label={t('live')} variant="solid" />
+                      {project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="glass" />}
+                    </>
+                  ) : (
+                    project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="solid" />
+                  )}
+                </div>
+              )}
+            </div>
+          ) : null
+        }
         intro={
           <div className="flex max-w-[1000px] flex-col items-center gap-6">
             <StatusPill status={project.status} locale={loc} withPill />
@@ -120,19 +132,6 @@ export default async function ProjectPage({ params }: PageProps) {
               </ul>
             )}
 
-            {(project.repoUrl || project.liveUrl) && (
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                {project.liveUrl ? (
-                  <>
-                    <CtaPill href={project.liveUrl} label={t('live')} variant="solid" />
-                    {project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="glass" />}
-                  </>
-                ) : (
-                  project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="solid" />
-                )}
-              </div>
-            )}
-
             <div className="mt-4 grid w-full grid-cols-2 gap-x-8 gap-y-5 border-t border-[var(--color-glass-border)] pt-6 text-left md:grid-cols-4">
               <MetaCol label={t('timeline')} value={timeline ?? '—'} />
               <MetaCol label={t('role')} value={role ?? '—'} />
@@ -143,49 +142,6 @@ export default async function ProjectPage({ params }: PageProps) {
         }
       />
 
-      {/* Prev/Next */}
-      <BuildIn key={`${slug}-prevnext`} inView>
-      <section className="mx-auto max-w-[1280px] px-6 pt-16 md:px-12 lg:px-20">
-        <div className="grid grid-cols-1 gap-4 border-t border-[var(--color-glass-border)] pt-8 md:grid-cols-2">
-          {prev ? (
-            <Link href={`/${locale}/work/${prev.slug}`} className="group flex flex-col gap-1">
-              <span
-                className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                ← {t('prev')}
-              </span>
-              <span className="text-[18px] font-medium text-[var(--color-text-primary)] group-hover:opacity-80">
-                {loc === 'fr' ? prev.nameFr : prev.nameEn}
-              </span>
-            </Link>
-          ) : (
-            <span />
-          )}
-          {next ? (
-            <Link
-              href={`/${locale}/work/${next.slug}`}
-              className="group flex flex-col items-start gap-2 md:items-end md:text-right"
-            >
-              <span
-                className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]"
-                style={{ fontFamily: 'var(--font-mono)' }}
-              >
-                {t('next')} →
-              </span>
-              <span
-                className="text-[36px] font-semibold leading-[1] text-[var(--color-text-primary)] transition-transform duration-500 ease-[var(--ease-out-quint)] group-hover:-translate-x-2 md:text-[64px]"
-                style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
-              >
-                {loc === 'fr' ? next.nameFr : next.nameEn}
-              </span>
-            </Link>
-          ) : (
-            <span />
-          )}
-        </div>
-      </section>
-      </BuildIn>
     </>
   );
 }

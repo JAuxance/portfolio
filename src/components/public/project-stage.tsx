@@ -18,10 +18,11 @@ export type StageScene =
   | { kind: 'facts'; label: string; facts: { label: string; text: string }[] };
 
 interface ProjectStageProps {
-  name: string;
   /** Opening scene (name, status, tagline, actions…), rendered by the page. */
   intro: ReactNode;
   scenes: StageScene[];
+  /** Closing scene, shown once the last chapter is done (e.g. the code button). */
+  outro?: ReactNode;
   backHref: string;
   backLabel: string;
 }
@@ -33,10 +34,10 @@ const mono = { fontFamily: 'var(--font-mono)' } as const;
  * chapters cross-fade in place, driven by scroll position, over the site's
  * 3D backdrop. Scene 0 is the intro; a counter + progress line track the rest.
  */
-export function ProjectStage({ name, intro, scenes, backHref, backLabel }: ProjectStageProps) {
+export function ProjectStage({ intro, scenes, outro, backHref, backLabel }: ProjectStageProps) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const total = scenes.length + 1; // + the intro scene
+  const total = scenes.length + 1 + (outro ? 1 : 0); // intro + chapters + outro
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
   const [active, setActive] = useState(0);
   useMotionValueEvent(scrollYProgress, 'change', (p) =>
@@ -52,6 +53,7 @@ export function ProjectStage({ name, intro, scenes, backHref, backLabel }: Proje
         {scenes.map((s, i) => (
           <SceneBody key={i} scene={s} />
         ))}
+        {outro}
       </div>
     );
   }
@@ -83,6 +85,12 @@ export function ProjectStage({ name, intro, scenes, backHref, backLabel }: Proje
           </StageLayer>
         ))}
 
+        {outro && (
+          <StageLayer progress={scrollYProgress} index={total - 1} total={total} active={active}>
+            <div className="flex h-full items-center justify-center px-6 pt-[60px] text-center">{outro}</div>
+          </StageLayer>
+        )}
+
         {/* HUD */}
         <div
           className="absolute inset-x-0 top-[76px] flex items-center justify-between px-6 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] md:px-12 lg:px-20"
@@ -91,9 +99,6 @@ export function ProjectStage({ name, intro, scenes, backHref, backLabel }: Proje
           <Link href={backHref} className="transition-colors hover:text-[var(--color-text-primary)]">
             ← {backLabel}
           </Link>
-          <span aria-label={name}>
-            {String(active + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
-          </span>
         </div>
         <motion.div
           aria-hidden
