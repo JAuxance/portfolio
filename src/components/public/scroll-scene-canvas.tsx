@@ -329,7 +329,11 @@ function Comet({ dot, shown, light }: CometProps) {
     const k = (t - c.start) / DURATION;
     if (k >= 1) {
       c.active = false;
-      c.next = t + 12 + Math.random() * 13;
+      // Plus de comètes : une toutes les 5 à 10 secondes
+      c.next = t + 5 + Math.random() * 5;
+
+      // Beaucoup : une toutes les 2 à 5 secondes
+      c.next = t + 2 + Math.random() * 3;
       head.current.visible = tail.current.visible = false;
       return;
     }
