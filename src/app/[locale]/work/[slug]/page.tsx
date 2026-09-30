@@ -26,6 +26,12 @@ export default async function ProjectPage({ params }: PageProps) {
   const project = await db.project.findUnique({ where: { slug } });
   if (!project || !project.published) notFound();
 
+  const all = await db.project.findMany({
+    where: { published: true },
+    orderBy: { order: 'asc' },
+    select: { slug: true, nameEn: true, nameFr: true },
+  });
+
   const name = loc === 'fr' ? project.nameFr : project.nameEn;
   const tagline = loc === 'fr' ? project.taglineFr : project.taglineEn;
   const ctx = loc === 'fr' ? project.contextFr : project.contextEn;
@@ -77,6 +83,13 @@ export default async function ProjectPage({ params }: PageProps) {
         key={`${slug}-stage`}
         backHref={`/${locale}#work`}
         backLabel={t('back')}
+        dev={{
+          locale: loc,
+          slug,
+          projects: all.map((p) => ({ slug: p.slug, name: loc === 'fr' ? p.nameFr : p.nameEn })),
+          repoUrl: project.repoUrl,
+          liveUrl: project.liveUrl,
+        }}
         scenes={scenes}
         outro={
           project.repoUrl || project.liveUrl ? (

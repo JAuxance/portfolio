@@ -10,6 +10,7 @@ import {
   useTransform,
   type MotionValue,
 } from 'framer-motion';
+import { DevPrompt, type DevChapter, type DevProject } from './dev-prompt';
 
 export type StageScene =
   | { kind: 'text'; label: string; paragraphs: string[] }
@@ -25,6 +26,14 @@ interface ProjectStageProps {
   outro?: ReactNode;
   backHref: string;
   backLabel: string;
+  /** Enables the dev quick-nav prompt (cd .., cd ../project, cd <chapter>). */
+  dev?: {
+    locale: 'en' | 'fr';
+    slug: string;
+    projects: DevProject[];
+    repoUrl: string | null;
+    liveUrl: string | null;
+  };
 }
 
 const mono = { fontFamily: 'var(--font-mono)' } as const;
@@ -34,7 +43,7 @@ const mono = { fontFamily: 'var(--font-mono)' } as const;
  * chapters cross-fade in place, driven by scroll position, over the site's
  * 3D backdrop. Scene 0 is the intro; a counter + progress line track the rest.
  */
-export function ProjectStage({ intro, scenes, outro, backHref, backLabel }: ProjectStageProps) {
+export function ProjectStage({ intro, scenes, outro, backHref, backLabel, dev }: ProjectStageProps) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
   const total = scenes.length + 1 + (outro ? 1 : 0); // intro + chapters + outro
@@ -45,6 +54,31 @@ export function ProjectStage({ intro, scenes, outro, backHref, backLabel }: Proj
   );
   const bar = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
+  // Directory-style chapter names for the prompt: intro, context, process-1…
+  const chapters: DevChapter[] = (() => {
+    const slugify = (l: string) =>
+      l.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const labels = scenes.map((sc) => slugify(sc.label));
+    const seen: Record<string, number> = {};
+    const out: DevChapter[] = [{ name: 'intro', index: 0 }];
+    labels.forEach((l, i) => {
+      const dupes = labels.filter((x) => x === l).length;
+      seen[l] = (seen[l] ?? 0) + 1;
+      out.push({ name: dupes > 1 ? `${l}-${seen[l]}` : l, index: i + 1 });
+    });
+    if (outro) out.push({ name: 'end', index: total - 1 });
+    return out;
+  })();
+
+  const gotoScene = (i: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const clamped = Math.max(0, Math.min(i, total - 1));
+    const top = el.getBoundingClientRect().top + window.scrollY;
+    const travel = el.offsetHeight - window.innerHeight;
+    window.scrollTo({ top: top + (clamped / (total - 1)) * travel, behavior: 'smooth' });
+  };
+
   // Reduced motion: no pinning — the intro, then every chapter stacked.
   if (reduced) {
     return (
@@ -54,6 +88,11 @@ export function ProjectStage({ intro, scenes, outro, backHref, backLabel }: Proj
           <SceneBody key={i} scene={s} />
         ))}
         {outro}
+        {dev && (
+          <div className="relative mt-8 h-24 w-screen max-w-none">
+            <DevPrompt {...dev} chapters={[]} />
+          </div>
+        )}
       </div>
     );
   }
@@ -105,6 +144,8 @@ export function ProjectStage({ intro, scenes, outro, backHref, backLabel }: Proj
           className="absolute right-0 top-0 h-full w-px origin-top bg-[var(--color-text-primary)]/50"
           style={{ scaleY: bar }}
         />
+
+        {dev && <DevPrompt {...dev} chapters={chapters} onGoto={gotoScene} />}
       </div>
     </div>
   );
