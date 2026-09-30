@@ -30,7 +30,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
 
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
-      <div className="relative min-h-screen overflow-hidden">
+      <div className="relative min-h-screen overflow-x-clip">
         <GlowBackdrop />
         <ScrollScene />
         <Header showBook={publishedBooks > 0} />

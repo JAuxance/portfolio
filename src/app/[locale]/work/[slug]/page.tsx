@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { locales } from '@/lib/i18n-config';
 import { isVideoUrl } from '@/lib/media';
 import { StatusPill } from '@/components/public/status-pill';
-import { GlassCard } from '@/components/public/glass-card';
+import { ProjectStage, type StageScene } from '@/components/public/project-stage';
 import { BuildIn } from '@/components/public/build-in';
 import { CtaPill } from '@/components/public/section-cta';
 import type { ArchitectureLayer, Decision, Lesson } from '@/types/content';
@@ -49,11 +49,44 @@ export default async function ProjectPage({ params }: PageProps) {
   const decisions = (project.decisions as unknown as Decision[] | null) ?? [];
   const lessons = (project.lessons as unknown as Lesson[] | null) ?? [];
 
+  const scenes: StageScene[] = [
+    ...(ctx.length > 0 ? [{ kind: 'text' as const, label: t('context'), paragraphs: ctx }] : []),
+    ...(architecture.length > 0
+      ? [
+          {
+            kind: 'layers' as const,
+            label: t('architecture'),
+            layers: architecture.map((l) => ({
+              layer: l.layer,
+              primary: l.primary,
+              notes: loc === 'fr' ? l.notesFr : l.notesEn,
+            })),
+          },
+        ]
+      : []),
+    ...decisions.map((d) => ({
+      kind: 'step' as const,
+      label: t('process'),
+      n: d.n,
+      title: loc === 'fr' ? d.titleFr : d.titleEn,
+      body: loc === 'fr' ? d.bodyFr : d.bodyEn,
+    })),
+    ...(lessons.length > 0
+      ? [
+          {
+            kind: 'facts' as const,
+            label: t('outcome'),
+            facts: lessons.map((l) => ({ label: l.label, text: loc === 'fr' ? l.textFr : l.textEn })),
+          },
+        ]
+      : []),
+  ];
+
   return (
     <>
       {/* Hero — each block "builds" in sequence; keyed by slug so swapping
           projects (Prev/Next) replays the construction. */}
-      <section className="mx-auto max-w-[1280px] px-6 pt-[120px] pb-12 md:px-12 md:pt-[140px] lg:px-20">
+      <section className="mx-auto flex min-h-[92svh] max-w-[1280px] flex-col justify-center px-6 pt-[120px] pb-16 md:px-12 md:pt-[140px] lg:px-20">
         <BuildIn key={`${slug}-back`} index={0}>
           <Link
             href={`/${locale}#work`}
@@ -70,7 +103,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
         <BuildIn key={`${slug}-name`} index={2}>
           <h1
-            className="mb-6 text-[40px] md:text-[60px] lg:text-[76px] font-semibold leading-[1.02] text-[var(--color-text-primary)]"
+            className="mb-8 text-[52px] md:text-[96px] lg:text-[132px] font-semibold leading-[0.95] text-[var(--color-text-primary)]"
             style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
           >
             {name}
@@ -112,143 +145,15 @@ export default async function ProjectPage({ params }: PageProps) {
         </BuildIn>
       </section>
 
-      {/* Browser mockup */}
-      <section className="mx-auto max-w-[1280px] px-6 md:px-12 lg:px-20">
-        <BuildIn key={`${slug}-mockup`} index={6}>
-        <div className="glass overflow-hidden" style={{ borderRadius: 20 }}>
-          <div className="flex items-center gap-2 border-b border-[var(--color-glass-border)] px-4 py-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-text-tertiary)] opacity-50" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-text-tertiary)] opacity-50" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[var(--color-text-tertiary)] opacity-50" />
-            <span className="mx-auto flex max-w-[280px] items-center gap-2 rounded-full bg-[var(--color-glass-fill)] px-3 py-1 text-[11px] text-[var(--color-text-tertiary)]">
-              <span>auxance.dev/work/{project.slug}</span>
-            </span>
-          </div>
-          {project.heroImage ? (
-            <ProjectHero
-              href={project.liveUrl ?? project.repoUrl}
-              src={project.heroImage}
-              alt={name}
-              label={project.liveUrl ? t('live') : t('code')}
-            />
-          ) : (
-            <div
-              className="grid h-[280px] place-items-center md:h-[480px] lg:h-[600px]"
-              style={{
-                background:
-                  'radial-gradient(circle at 30% 20%, rgba(140,178,255,0.12), transparent 50%), radial-gradient(circle at 70% 80%, rgba(191,140,255,0.10), transparent 50%)',
-              }}
-            >
-              <span className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]">
-                Demo placeholder
-              </span>
-            </div>
-          )}
-        </div>
-        </BuildIn>
-      </section>
-
-      {/* 01 Context */}
-      {ctx.length > 0 && (
-        <BuildIn key={`${slug}-context`} inView>
-        <section className="mx-auto max-w-[880px] px-6 py-[80px] md:py-[120px]">
-          <SectionLabel n="01" title={t('context')} />
-          <div className="mt-10 flex flex-col gap-6">
-            {ctx.map((p, i) => (
-              <p key={i} className="text-[17px] leading-[1.68] text-[var(--color-text-secondary)]">
-                {p}
-              </p>
-            ))}
-          </div>
-        </section>
-        </BuildIn>
-      )}
-
-      {/* 02 Architecture */}
-      {architecture.length > 0 && (
-        <BuildIn key={`${slug}-arch`} inView>
-        <section className="mx-auto max-w-[1120px] px-6 py-[80px] md:py-[120px] md:px-12">
-          <SectionLabel n="02" title={t('architecture')} />
-          <ul className="mt-10 flex flex-col">
-            {architecture.map((layer, i) => (
-              <li
-                key={i}
-                className="grid grid-cols-1 gap-2 border-t border-[var(--color-glass-border)] py-6 md:grid-cols-[200px_1fr] md:gap-12"
-              >
-                <span
-                  className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {layer.layer}
-                </span>
-                <div>
-                  <p className="text-[19px] font-medium leading-[1.4] text-[var(--color-text-primary)]">
-                    {layer.primary}
-                  </p>
-                  <p className="mt-2 text-[14px] leading-[1.6] text-[var(--color-text-secondary)]">
-                    {loc === 'fr' ? layer.notesFr : layer.notesEn}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-        </BuildIn>
-      )}
-
-      {/* 03 Process */}
-      {decisions.length > 0 && (
-        <BuildIn key={`${slug}-process`} inView>
-        <section className="mx-auto max-w-[880px] px-6 py-[80px] md:py-[120px]">
-          <SectionLabel n="03" title={t('process')} />
-          <ol className="mt-10 flex flex-col gap-12">
-            {decisions.map((d) => (
-              <li key={d.n} className="flex flex-col gap-3">
-                <span
-                  className="font-mono text-[14px] tracking-[0.06em] text-[var(--color-text-tertiary)]"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {d.n}
-                </span>
-                <h3
-                  className="text-[22px] md:text-[24px] font-medium leading-[1.18] text-[var(--color-text-primary)]"
-                  style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}
-                >
-                  {loc === 'fr' ? d.titleFr : d.titleEn}
-                </h3>
-                <p className="max-w-[700px] text-[15px] leading-[1.7] text-[var(--color-text-secondary)]">
-                  {loc === 'fr' ? d.bodyFr : d.bodyEn}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </section>
-        </BuildIn>
-      )}
-
-      {/* 04 Outcome */}
-      {lessons.length > 0 && (
-        <BuildIn key={`${slug}-outcome`} inView>
-        <section className="mx-auto max-w-[880px] px-6 py-[80px] md:py-[120px]">
-          <SectionLabel n="04" title={t('outcome')} />
-          <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-            {lessons.map((l, i) => (
-              <GlassCard key={i} noHover className="flex flex-col gap-4">
-                <span
-                  className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]"
-                  style={{ fontFamily: 'var(--font-mono)' }}
-                >
-                  {l.label}
-                </span>
-                <p className="text-[14px] leading-[1.7] text-[var(--color-text-secondary)]">
-                  {loc === 'fr' ? l.textFr : l.textEn}
-                </p>
-              </GlassCard>
-            ))}
-          </div>
-        </section>
-        </BuildIn>
-      )}
+      {/* The story: a pinned, full-screen film driven by scroll. */}
+      <ProjectStage
+        key={`${slug}-stage`}
+        name={name}
+        media={project.heroImage ? { src: project.heroImage, video: isVideoUrl(project.heroImage) } : null}
+        href={project.liveUrl ?? project.repoUrl}
+        hrefLabel={project.liveUrl ? t('live') : t('code')}
+        scenes={scenes}
+      />
 
       {/* Prev/Next */}
       <BuildIn key={`${slug}-prevnext`} inView>
@@ -272,7 +177,7 @@ export default async function ProjectPage({ params }: PageProps) {
           {next ? (
             <Link
               href={`/${locale}/work/${next.slug}`}
-              className="group flex flex-col items-start gap-1 md:items-end md:text-right"
+              className="group flex flex-col items-start gap-2 md:items-end md:text-right"
             >
               <span
                 className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]"
@@ -280,7 +185,10 @@ export default async function ProjectPage({ params }: PageProps) {
               >
                 {t('next')} →
               </span>
-              <span className="text-[18px] font-medium text-[var(--color-text-primary)] group-hover:opacity-80">
+              <span
+                className="text-[36px] font-semibold leading-[1] text-[var(--color-text-primary)] transition-transform duration-500 ease-[var(--ease-out-quint)] group-hover:-translate-x-2 md:text-[64px]"
+                style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
+              >
                 {loc === 'fr' ? next.nameFr : next.nameEn}
               </span>
             </Link>
@@ -291,70 +199,6 @@ export default async function ProjectPage({ params }: PageProps) {
       </section>
       </BuildIn>
     </>
-  );
-}
-
-/**
- * The hero media inside the browser mockup. When the project has a live or
- * repo URL, the whole image becomes an external link (the AI Journey hero even
- * prints that URL), with a subtle hover hint. No link → a plain framed tile.
- */
-function ProjectHero({
-  href,
-  src,
-  alt,
-  label,
-}: {
-  href: string | null;
-  src: string;
-  alt: string;
-  label: string;
-}) {
-  const frame = 'h-[280px] md:h-[480px] lg:h-[600px]';
-  const media = isVideoUrl(src) ? (
-    <video src={src} className="h-full w-full object-cover" autoPlay loop muted playsInline />
-  ) : (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={src}
-      alt={alt}
-      className="h-full w-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-[1.015]"
-    />
-  );
-
-  if (!href) return <div className={frame}>{media}</div>;
-
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label={`${alt} — ${label}`}
-      className={`group relative block cursor-pointer overflow-hidden ${frame}`}
-    >
-      {media}
-      <span
-        className="pointer-events-none absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full border border-[var(--color-glass-border)] px-3 py-1.5 font-mono text-[11px] uppercase tracking-[0.14em] text-[var(--color-text-primary)] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        style={{
-          fontFamily: 'var(--font-mono)',
-          backdropFilter: 'blur(12px)',
-          background: 'color-mix(in srgb, var(--color-bg) 70%, transparent)',
-        }}
-      >
-        {label} ↗
-      </span>
-    </a>
-  );
-}
-
-function SectionLabel({ n: _n, title }: { n: string; title: string }) {
-  return (
-    <h2
-      className="text-[32px] md:text-[40px] font-semibold leading-[1.08] text-[var(--color-text-primary)]"
-      style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
-    >
-      {title}
-    </h2>
   );
 }
 
