@@ -52,7 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: 'Auxance / Portfolio — Writing in public.',
       description,
       type: 'website',
-      images: [{ url: socialImage, width: 1200, height: 630, alt: 'Auxance Jourdan — full-stack student building toward ML research.' }],
+      images: [{ url: socialImage, width: 1200, height: 630, alt: 'Auxance Jourdan — Full-stack → ML research.' }],
     },
     twitter: {
       card: 'summary_large_image',
