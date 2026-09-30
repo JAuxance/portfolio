@@ -71,14 +71,14 @@ interface PlanetSpec {
 }
 
 const PLANETS: PlanetSpec[] = [
-  { kind: 'dots', radius: 2.4, x: 7.5, y: 1.5, z: -16, tilt: 0.5, ring: true },
-  { kind: 'lines', radius: 3.2, x: -8, y: -1.8, z: -42, tilt: -0.4 },
-  { kind: 'eclipse', radius: 2.6, x: 7, y: -2, z: -68, tilt: 0.35, ring: true },
-  { kind: 'dots', radius: 1.7, x: -7, y: 2.4, z: -92, tilt: 0.7, moon: true },
-  { kind: 'lines', radius: 2.8, x: 8, y: 0.5, z: -118, tilt: -0.6, ring: true },
+  { kind: 'dots', radius: 4.2, x: 9.5, y: 1.8, z: -18, tilt: 0.5, ring: true },
+  { kind: 'lines', radius: 5, x: -10.5, y: -2.2, z: -44, tilt: -0.4, ring: true },
+  { kind: 'eclipse', radius: 4.4, x: 9.5, y: -2.4, z: -70, tilt: 0.35, ring: true },
+  { kind: 'dots', radius: 3.2, x: -9.5, y: 2.8, z: -94, tilt: 0.7, moon: true },
+  { kind: 'lines', radius: 4.6, x: 10, y: 0.6, z: -120, tilt: -0.6, ring: true },
 ];
 
-function dotsGeometry(radius: number, n = 520) {
+function dotsGeometry(radius: number, n = 1500) {
   const arr = new Float32Array(n * 3);
   const golden = Math.PI * (3 - Math.sqrt(5));
   for (let i = 0; i < n; i++) {
@@ -183,11 +183,31 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
       position={[spec.x, spec.y, spec.z]}
       rotation={[spec.tilt, 0, spec.tilt * 0.6]}
     >
+      {/* atmosphere: a soft glow behind the body */}
+      <points userData={{ alpha: kind === 'eclipse' ? 0.55 : 0.4 }}>
+        <bufferGeometry>
+          <bufferAttribute attach="attributes-position" args={[new Float32Array([0, 0, -0.5]), 3]} />
+        </bufferGeometry>
+        <pointsMaterial
+          size={radius * 4.2}
+          sizeAttenuation
+          transparent
+          map={dot}
+          depthWrite={false}
+          blending={blending}
+        />
+      </points>
+
       <group ref={body}>
+        {/* solid core: hides the far side so the globe reads as a volume */}
+        <mesh userData={{ keep: true }}>
+          <sphereGeometry args={[radius * 0.985, 48, 32]} />
+          <meshBasicMaterial color={bg} transparent />
+        </mesh>
         {kind === 'dots' && geometry && (
-          <points geometry={geometry} userData={{ alpha: 0.9 }}>
+          <points geometry={geometry} userData={{ alpha: 1 }}>
             <pointsMaterial
-              size={0.11}
+              size={0.17}
               sizeAttenuation
               transparent
               map={dot}
@@ -198,32 +218,36 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
           </points>
         )}
         {kind === 'lines' && geometry && (
-          <lineSegments geometry={geometry} userData={{ alpha: 0.35 }}>
+          <lineSegments geometry={geometry} userData={{ alpha: 0.75 }}>
             <lineBasicMaterial transparent depthWrite={false} blending={blending} />
           </lineSegments>
         )}
         {kind === 'eclipse' && (
-          <>
-            <mesh userData={{ keep: true }}>
-              <sphereGeometry args={[radius, 48, 32]} />
-              <meshBasicMaterial color={bg} transparent />
-            </mesh>
-            <lineLoop geometry={outline} userData={{ alpha: 0.7 }}>
-              <lineBasicMaterial transparent depthWrite={false} blending={blending} />
-            </lineLoop>
-          </>
+          <lineLoop geometry={outline} userData={{ alpha: 1 }}>
+            <lineBasicMaterial transparent depthWrite={false} blending={blending} />
+          </lineLoop>
         )}
       </group>
 
       {ring && (
-        <lineLoop geometry={ringGeo} rotation={[Math.PI / 2.4, 0, 0]} userData={{ alpha: 0.45 }}>
-          <lineBasicMaterial transparent depthWrite={false} blending={blending} />
-        </lineLoop>
+        <>
+          <lineLoop geometry={ringGeo} rotation={[Math.PI / 2.4, 0, 0]} userData={{ alpha: 0.85 }}>
+            <lineBasicMaterial transparent depthWrite={false} blending={blending} />
+          </lineLoop>
+          <lineLoop
+            geometry={ringGeo}
+            rotation={[Math.PI / 2.4, 0, 0]}
+            scale={1.22}
+            userData={{ alpha: 0.35 }}
+          >
+            <lineBasicMaterial transparent depthWrite={false} blending={blending} />
+          </lineLoop>
+        </>
       )}
 
       {hasMoon && (
         <>
-          <lineLoop geometry={orbitGeo} rotation={[Math.PI / 2.8, 0, 0]} userData={{ alpha: 0.18 }}>
+          <lineLoop geometry={orbitGeo} rotation={[Math.PI / 2.8, 0, 0]} userData={{ alpha: 0.3 }}>
             <lineBasicMaterial transparent depthWrite={false} blending={blending} />
           </lineLoop>
           <group ref={moon} rotation={[Math.PI / 2.8, 0, 0]}>
@@ -232,7 +256,7 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
                 <bufferAttribute attach="attributes-position" args={[new Float32Array([0, 0, 0]), 3]} />
               </bufferGeometry>
               <pointsMaterial
-                size={0.45}
+                size={0.8}
                 sizeAttenuation
                 transparent
                 map={dot}
@@ -390,6 +414,7 @@ export default function ScrollSceneCanvas({ light, animated }: { light: boolean;
   );
   return (
     <Canvas
+      flat
       camera={{ fov: 60, near: 0.1, far: 80, position: [0, 0, 0] }}
       dpr={[1, 1.5]}
       frameloop={animated ? 'always' : 'demand'}
