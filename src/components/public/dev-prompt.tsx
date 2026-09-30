@@ -208,16 +208,23 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
     }
   }
 
-  function submit() {
-    const raw = value;
-    setValue('');
-    cursor.current = -1;
-    if (!raw.trim()) return;
+  function runCommand(raw: string) {
     past.current = [raw, ...past.current].slice(0, 50);
     const out = execute(raw);
     if (out === null) setHistory([]);
     else setHistory((h) => [...h, { cmd: raw, out }].slice(-5));
   }
+
+  function submit() {
+    const raw = value;
+    setValue('');
+    cursor.current = -1;
+    if (!raw.trim()) return;
+    runCommand(raw);
+  }
+
+  // Tap-to-run shortcuts so the prompt is fully usable without a keyboard.
+  const chips = ['cd ..', 'ls', 'next', 'prev', ...(repoUrl ? ['code'] : []), 'help'];
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
@@ -292,6 +299,20 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
               style={{ ...mono, caretColor: 'var(--color-text-primary)' }}
             />
           </label>
+
+          <div className="flex flex-wrap gap-1.5 px-3.5 pb-3" role="group" aria-label="Quick commands">
+            {chips.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => runCommand(c)}
+                className="glass-thin glass-hover rounded-full px-2.5 py-1 font-mono text-[11px] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
+                style={{ ...mono, borderRadius: 999 }}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
     </div>
   );
