@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Header } from '@/components/public/header';
 import { Footer } from '@/components/public/footer';
+import { ScrollScene } from '@/components/public/scroll-scene';
 import { GlowBackdrop } from '@/components/public/atmospheric-glow';
 import { locales } from '@/lib/i18n-config';
 import { db } from '@/lib/db';
@@ -31,6 +32,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
     <NextIntlClientProvider locale={locale} messages={messages}>
       <div className="relative min-h-screen overflow-hidden">
         <GlowBackdrop />
+        <ScrollScene />
         <Header showBook={publishedBooks > 0} />
         <main className="relative z-10">{children}</main>
         <Footer />
