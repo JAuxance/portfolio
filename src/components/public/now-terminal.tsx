@@ -156,8 +156,6 @@ export function NowTerminal({ locale, projects, now, email, github, twitter, idl
     runCommand(raw);
   }
 
-  // Tap-to-run shortcuts so the terminal is fully usable without a keyboard.
-  const chips = ['help', 'ls', 'now', ...projects.slice(0, 4).map((p) => `open ${p.slug}`), 'email', 'comet'];
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter') {
@@ -244,23 +242,6 @@ export function NowTerminal({ locale, projects, now, email, github, twitter, idl
           )}
         </span>
       </label>
-
-      <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Quick commands">
-        {chips.map((c) => (
-          <button
-            key={c}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              runCommand(c);
-            }}
-            className="glass-thin glass-hover rounded-full px-3 py-1.5 font-mono text-[11px] text-[var(--color-text-secondary)] transition-colors hover:text-[var(--color-text-primary)]"
-            style={{ ...mono, borderRadius: 999 }}
-          >
-            {c}
-          </button>
-        ))}
-      </div>
     </div>
   );
 }

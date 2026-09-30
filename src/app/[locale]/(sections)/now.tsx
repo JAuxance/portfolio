@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 import type { NowItem } from '@prisma/client';
@@ -75,6 +76,7 @@ export function NowSection({ items, locale, projects, email, github, twitter }: 
               item={item}
               index={i}
               locale={locale}
+              href={hrefFor(item, projects, locale)}
               state={reduced ? 'done' : !inView || i > done ? 'idle' : i === done ? 'typing' : 'done'}
               onDone={() => setDone((d) => Math.max(d, i + 1))}
             />
@@ -100,16 +102,29 @@ export function NowSection({ items, locale, projects, email, github, twitter }: 
 
 type EntryState = 'idle' | 'typing' | 'done';
 
+/** Which page an entry leads to: the project it names, or the book. */
+function hrefFor(item: NowItem, projects: TerminalProject[], locale: string): string | null {
+  const text = `${item.titleEn} ${item.titleFr}`.toLowerCase();
+  const project = projects.find(
+    (p) => text.includes(p.name.toLowerCase()) || text.includes(p.slug.replace(/-/g, ' '))
+  );
+  if (project) return `/${locale}/work/${project.slug}`;
+  if (/\bbook\b|\blivre\b/.test(text)) return `/${locale}/book`;
+  return null;
+}
+
 function Entry({
   item,
   index,
   locale,
+  href,
   state,
   onDone,
 }: {
   item: NowItem;
   index: number;
   locale: 'en' | 'fr';
+  href: string | null;
   state: EntryState;
   onDone: () => void;
 }) {
@@ -139,11 +154,10 @@ function Entry({
   const shown = state === 'done' ? title.length : state === 'typing' ? chars : 0;
   const detailVisible = state === 'done' || (state === 'typing' && chars >= title.length);
 
-  return (
-    <li
-      className="grid grid-cols-[28px_1fr] gap-x-3 border-t border-[var(--color-glass-border)] py-6 first:border-t-0 md:grid-cols-[36px_132px_1fr] md:gap-x-5 md:py-7"
-      style={{ opacity: state === 'idle' ? 0.25 : 1, transition: 'opacity 0.3s' }}
-    >
+  const rowClass =
+    'group relative grid grid-cols-[28px_1fr] gap-x-3 py-6 md:grid-cols-[36px_132px_1fr] md:gap-x-5 md:py-7';
+  const content = (
+    <>
       <span className="pt-1 font-mono text-[11px] text-[var(--color-text-tertiary)]" style={mono}>
         {String(index + 1).padStart(2, '0')}
       </span>
@@ -174,6 +188,29 @@ function Entry({
           {body}
         </p>
       </div>
+      {href && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-0 top-7 hidden text-[16px] text-[var(--color-text-tertiary)] opacity-0 transition-all duration-300 group-hover:translate-x-1 group-hover:text-[var(--color-text-primary)] group-hover:opacity-100 md:block"
+        >
+          →
+        </span>
+      )}
+    </>
+  );
+
+  return (
+    <li
+      className="border-t border-[var(--color-glass-border)] first:border-t-0"
+      style={{ opacity: state === 'idle' ? 0.25 : 1, transition: 'opacity 0.3s' }}
+    >
+      {href ? (
+        <Link href={href} className={rowClass}>
+          {content}
+        </Link>
+      ) : (
+        <div className={rowClass}>{content}</div>
+      )}
     </li>
   );
 }
