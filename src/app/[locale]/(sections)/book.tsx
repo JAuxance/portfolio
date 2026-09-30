@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ScrollText } from '@/components/public/scroll-text';
 import { SectionTitle } from '@/components/public/section-title';
 
 interface BookSectionProps {
@@ -65,9 +66,9 @@ export function BookSection({ book, locale }: BookSectionProps) {
               </p>
             )}
             {book.description && (
-              <p className="mx-auto mt-6 max-w-[600px] text-[13px] leading-[1.75] text-[#777169]">
+              <ScrollText className="mx-auto mt-6 max-w-[600px] text-[13px] leading-[1.75] text-[#777169]">
                 {book.description}
-              </p>
+              </ScrollText>
             )}
           </div>
 

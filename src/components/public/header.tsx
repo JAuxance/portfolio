@@ -5,11 +5,14 @@ import { usePathname } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { NavLink } from './nav-link';
 import { ThemeToggle } from './theme-toggle';
+import { ScrollProgress } from './scroll-progress';
+import { useActiveSection } from './use-active-section';
 
 export function Header({ showBook = false }: { showBook?: boolean }) {
   const t = useTranslations('nav');
   const tLocale = useTranslations('locale');
   const locale = useLocale();
+  const active = useActiveSection(showBook ? ['book', 'work', 'contact'] : ['work', 'contact']);
   const pathname = usePathname() ?? '/';
   const otherLocale = locale === 'en' ? 'fr' : 'en';
   const switched = pathname.startsWith(`/${locale}`)
@@ -39,9 +42,9 @@ export function Header({ showBook = false }: { showBook?: boolean }) {
             mirrors the scroll order; Now is omitted (it sits right under
             the hero, the first scroll reveals it). */}
         <nav className="hidden items-center gap-8 md:flex">
-          {showBook && <NavLink href={`/${locale}#book`}>{t('book')}</NavLink>}
-          <NavLink href={`/${locale}#work`}>{t('work')}</NavLink>
-          <NavLink href={`/${locale}#contact`}>{t('contact')}</NavLink>
+          {showBook && <NavLink href={`/${locale}#book`} active={active === 'book'}>{t('book')}</NavLink>}
+          <NavLink href={`/${locale}#work`} active={active === 'work'}>{t('work')}</NavLink>
+          <NavLink href={`/${locale}#contact`} active={active === 'contact'}>{t('contact')}</NavLink>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -55,6 +58,7 @@ export function Header({ showBook = false }: { showBook?: boolean }) {
           <ThemeToggle />
         </div>
       </div>
+      <ScrollProgress />
     </header>
   );
 }

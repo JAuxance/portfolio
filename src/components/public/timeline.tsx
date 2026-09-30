@@ -1,3 +1,13 @@
+'use client';
+
+import { useRef } from 'react';
+import {
+  motion,
+  useReducedMotion,
+  useScroll,
+  useSpring,
+  useTransform,
+} from 'framer-motion';
 import type { TrajectoryStation } from '@prisma/client';
 import { cn } from '@/lib/cn';
 
@@ -8,14 +18,28 @@ interface TimelineProps {
 }
 
 export function Timeline({ stations, locale, currentLabel }: TimelineProps) {
+  const reduced = useReducedMotion();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ['start 60%', 'end 60%'],
+  });
+  const lineScale = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.4 });
+
   return (
-    <div className="relative pl-[30px] md:pl-[40px] lg:pl-[48px]">
+    <div ref={containerRef} className="relative pl-[30px] md:pl-[40px] lg:pl-[48px]">
       {/* vertical line — the dot wrappers are 24px boxes anchored at the
           container's left edge, so the dots' center is always 12px in.
           11.5px + 1px width centers the line under them at every breakpoint. */}
       <div
         aria-hidden
         className="absolute top-1.5 bottom-1.5 left-[11.5px] w-px bg-[var(--color-glass-border)]"
+      />
+      {/* the line draws itself as the reader scrolls */}
+      <motion.div
+        aria-hidden
+        className="absolute top-1.5 bottom-1.5 left-[11.5px] w-px origin-top bg-[var(--color-text-primary)]/70"
+        style={{ scaleY: reduced ? 1 : lineScale }}
       />
       <ol className="flex flex-col gap-12 md:gap-14">
         {stations.map((s) => {
@@ -25,7 +49,7 @@ export function Timeline({ stations, locale, currentLabel }: TimelineProps) {
           const isGoal = s.state === 'GOAL';
 
           return (
-            <li key={s.id} className="relative">
+            <Station key={s.id} reduced={!!reduced}>
               {/* dot */}
               <span
                 aria-hidden
@@ -78,10 +102,27 @@ export function Timeline({ stations, locale, currentLabel }: TimelineProps) {
                   {obj}
                 </p>
               </div>
-            </li>
+            </Station>
           );
         })}
       </ol>
     </div>
+  );
+}
+
+/** A station fades/slides in and its dot pops as it crosses the reading line. */
+function Station({ children, reduced }: { children: React.ReactNode; reduced: boolean }) {
+  const ref = useRef<HTMLLIElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start 85%', 'start 60%'],
+  });
+  const opacity = useTransform(scrollYProgress, [0, 1], [0.25, 1]);
+  const x = useTransform(scrollYProgress, [0, 1], [-10, 0]);
+
+  return (
+    <motion.li ref={ref} className="relative" style={reduced ? undefined : { opacity, x }}>
+      {children}
+    </motion.li>
   );
 }

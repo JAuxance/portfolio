@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 import type { Profile } from '@prisma/client';
+import { ScrollText } from '@/components/public/scroll-text';
 import { SectionTitle } from '@/components/public/section-title';
 
 interface ContactSectionProps {
@@ -53,9 +54,9 @@ export function ContactSection({ profile, locale }: ContactSectionProps) {
       >
         {/* The ask */}
         <div className="flex flex-col items-start gap-6">
-          <p className="max-w-[480px] text-[16px] leading-[1.65] text-[var(--color-text-secondary)]">
+          <ScrollText className="max-w-[480px] text-[16px] leading-[1.65] text-[var(--color-text-secondary)]">
             {blurb}
-          </p>
+          </ScrollText>
           <a
             href={`mailto:${profile.emailPublic}`}
             className="break-all text-[24px] font-semibold text-[var(--color-text-primary)] transition-opacity hover:opacity-80 md:text-[30px]"
