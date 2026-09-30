@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { NavLink } from './nav-link';
 import { ThemeToggle } from './theme-toggle';
-import { ScrollProgress } from './scroll-progress';
 import { useActiveSection } from './use-active-section';
 
 export function Header({ showBook = false }: { showBook?: boolean }) {
@@ -58,7 +57,6 @@ export function Header({ showBook = false }: { showBook?: boolean }) {
           <ThemeToggle />
         </div>
       </div>
-      <ScrollProgress />
     </header>
   );
 }

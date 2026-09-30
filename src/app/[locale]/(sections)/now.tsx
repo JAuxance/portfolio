@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from 'framer-motion';
+import { motion, useInView, useReducedMotion } from 'framer-motion';
 import type { NowItem } from '@prisma/client';
-import { NowCard } from '@/components/public/now-card';
 import { SectionTitle } from '@/components/public/section-title';
 
 interface NowSectionProps {
@@ -12,91 +11,166 @@ interface NowSectionProps {
   locale: 'en' | 'fr';
 }
 
-/** Wraps v into [min, max) — the heart of the seamless loop. */
-function wrap(min: number, max: number, v: number) {
-  const range = max - min;
-  return min + (((v - min) % range) + range) % range;
-}
+const mono = { fontFamily: 'var(--font-mono)' } as const;
+const CHAR_MS = 16;
+const GAP_MS = 260;
 
-/** One full pass of the card set takes this long when idle. */
-const LOOP_SECONDS = 45;
-
+/**
+ * Now as a live log: a terminal-style panel where each entry is typed out in
+ * turn once the section scrolls into view, then its detail line fades in.
+ * Reduced motion shows everything at once.
+ */
 export function NowSection({ items, locale }: NowSectionProps) {
   const t = useTranslations('now');
   const reduced = useReducedMotion();
-
-  // Slow infinite ticker, but hand-driven too: pan/swipe moves it directly
-  // (wrapped, so you can never run off the end), and the auto-scroll pauses
-  // under the pointer or the finger, then resumes.
-  const x = useMotionValue(0);
-  const trackRef = useRef<HTMLDivElement>(null);
-  const half = useRef(0);
-  const paused = useRef(false);
-
-  useEffect(() => {
-    const el = trackRef.current;
-    if (!el) return;
-    const measure = () => {
-      half.current = el.scrollWidth / 2;
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-
-  useAnimationFrame((_, delta) => {
-    if (reduced || paused.current || !half.current) return;
-    const speed = half.current / LOOP_SECONDS;
-    x.set(wrap(-half.current, 0, x.get() - (speed * delta) / 1000));
-  });
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: '-20%' });
+  // How many entries have finished typing; the entry at this index is typing.
+  const [done, setDone] = useState(0);
+  const finished = reduced || done >= items.length;
 
   return (
     <section
       id="now"
-      className="relative mx-auto max-w-[1280px] px-6 py-[80px] md:px-12 md:py-[96px] lg:px-20"
+      className="relative mx-auto max-w-[1120px] px-6 py-[80px] md:px-10 md:py-[96px]"
       aria-label="Now"
     >
       <SectionTitle className="mb-12">{t('title')}</SectionTitle>
 
       <motion.div
+        ref={ref}
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: '-10%' }}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="relative overflow-hidden"
+        className="glass overflow-hidden"
+        style={{ borderRadius: 20 }}
       >
-        <motion.div
-          ref={trackRef}
-          style={{ x, touchAction: 'pan-y' }}
-          onPanStart={() => {
-            paused.current = true;
-          }}
-          onPan={(_, info) => {
-            if (half.current) x.set(wrap(-half.current, 0, x.get() + info.delta.x));
-          }}
-          onPanEnd={() => {
-            paused.current = false;
-          }}
-          onMouseEnter={() => {
-            paused.current = true;
-          }}
-          onMouseLeave={() => {
-            paused.current = false;
-          }}
-          className="flex w-max cursor-grab select-none active:cursor-grabbing"
+        {/* window bar */}
+        <div
+          className="flex items-center justify-between border-b border-[var(--color-glass-border)] px-5 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)] md:px-7"
+          style={mono}
         >
-          {[...items, ...items].map((item, i) => (
-            <div
-              key={`${item.id}-${i}`}
-              aria-hidden={i >= items.length}
-              className="mr-4 w-[300px] shrink-0 md:mr-5 md:w-[400px]"
-            >
-              <NowCard item={item} locale={locale} />
-            </div>
+          <span>now.log</span>
+          <span className="inline-flex items-center gap-2">
+            <span className="relative flex h-1.5 w-1.5">
+              {!reduced && (
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--color-text-primary)] opacity-50" />
+              )}
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--color-text-primary)]" />
+            </span>
+            live
+          </span>
+        </div>
+
+        <ol className="flex flex-col px-5 py-2 md:px-7">
+          {items.map((item, i) => (
+            <Entry
+              key={item.id}
+              item={item}
+              index={i}
+              locale={locale}
+              state={reduced ? 'done' : !inView || i > done ? 'idle' : i === done ? 'typing' : 'done'}
+              onDone={() => setDone((d) => Math.max(d, i + 1))}
+            />
           ))}
-        </motion.div>
+        </ol>
+
+        <div
+          className="flex items-center gap-2 border-t border-[var(--color-glass-border)] px-5 py-3 font-mono text-[13px] text-[var(--color-text-tertiary)] md:px-7"
+          style={mono}
+          aria-hidden
+        >
+          <span>$</span>
+          {finished && (
+            <motion.span
+              className="inline-block h-[1em] w-[0.55em] bg-[var(--color-text-primary)]"
+              animate={reduced ? undefined : { opacity: [1, 0, 1] }}
+              transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          )}
+        </div>
       </motion.div>
     </section>
+  );
+}
+
+type EntryState = 'idle' | 'typing' | 'done';
+
+function Entry({
+  item,
+  index,
+  locale,
+  state,
+  onDone,
+}: {
+  item: NowItem;
+  index: number;
+  locale: 'en' | 'fr';
+  state: EntryState;
+  onDone: () => void;
+}) {
+  const title = locale === 'fr' ? item.titleFr : item.titleEn;
+  const body = locale === 'fr' ? item.bodyFr : item.bodyEn;
+  const [chars, setChars] = useState(0);
+  const notified = useRef(false);
+
+  useEffect(() => {
+    if (state !== 'typing') return;
+    let n = 0;
+    const id = setInterval(() => {
+      n += 1;
+      setChars(n);
+      if (n >= title.length) {
+        clearInterval(id);
+        if (!notified.current) {
+          notified.current = true;
+          setTimeout(onDone, GAP_MS);
+        }
+      }
+    }, CHAR_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, title]);
+
+  const shown = state === 'done' ? title.length : state === 'typing' ? chars : 0;
+  const detailVisible = state === 'done' || (state === 'typing' && chars >= title.length);
+
+  return (
+    <li
+      className="grid grid-cols-[28px_1fr] gap-x-3 border-t border-[var(--color-glass-border)] py-6 first:border-t-0 md:grid-cols-[36px_132px_1fr] md:gap-x-5 md:py-7"
+      style={{ opacity: state === 'idle' ? 0.25 : 1, transition: 'opacity 0.3s' }}
+    >
+      <span className="pt-1 font-mono text-[11px] text-[var(--color-text-tertiary)]" style={mono}>
+        {String(index + 1).padStart(2, '0')}
+      </span>
+      <span
+        className="col-start-2 pt-1 font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--color-text-secondary)] md:col-start-auto"
+        style={mono}
+      >
+        [{item.label}]
+      </span>
+
+      <div className="col-start-2 mt-2 md:col-start-auto md:mt-0">
+        <h3
+          className="text-[22px] font-medium leading-[1.2] text-[var(--color-text-primary)] md:text-[26px]"
+          style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.025em' }}
+        >
+          <span className="sr-only">{title}</span>
+          <span aria-hidden>
+            {title.slice(0, shown)}
+            {state === 'typing' && chars < title.length && (
+              <span className="ml-0.5 inline-block h-[0.9em] w-[2px] translate-y-[0.1em] bg-[var(--color-text-primary)]" />
+            )}
+          </span>
+        </h3>
+        <p
+          className="mt-2 max-w-[680px] text-[14px] leading-[1.65] text-[var(--color-text-secondary)]"
+          style={{ opacity: detailVisible ? 1 : 0, transition: 'opacity 0.5s' }}
+        >
+          {body}
+        </p>
+      </div>
+    </li>
   );
 }
