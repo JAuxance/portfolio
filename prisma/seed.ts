@@ -24,7 +24,7 @@ async function main() {
     emailPublic: 'jauxance@gmail.com',
     github: 'https://github.com/JAuxance',
     linkedin: 'https://linkedin.com/in/auxance',
-    twitter: 'https://x.com/AuxanceJ',
+    twitter: 'https://x.com/auxance_j',
     readcv: 'https://read.cv/auxance',
     abstractEn:
       'Full-stack student at Holberton building production systems by day, training myself toward ML research by night. Five years from now I want to be inside a frontier lab in China — this site is the receipt for that bet.',
