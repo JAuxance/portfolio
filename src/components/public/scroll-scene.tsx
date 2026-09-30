@@ -19,7 +19,7 @@ class WebGLBoundary extends Component<{ children: ReactNode }, { failed: boolean
 
 /**
  * The page's centerpiece: a fixed WebGL journey behind the content. The
- * camera flies through a particle tunnel and ring "stations" as the page
+ * camera flies through a particle tunnel and particles and planets as the page
  * scrolls, tinting from white → blue → violet → amber → teal.
  */
 export function ScrollScene() {

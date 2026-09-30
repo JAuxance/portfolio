@@ -5,7 +5,6 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const DEPTH = 140; // how far the camera travels along -z
-const RINGS = 6; // one "station" per major scroll landmark
 
 /** Accent stops along the page: calm white → blue → violet → amber → teal. */
 const STOPS: [number, string][] = [
@@ -282,7 +281,6 @@ interface SceneProps {
 
 function Scene({ light, animated, count }: SceneProps) {
   const points = useRef<THREE.Points>(null);
-  const rings = useRef<(THREE.LineLoop | null)[]>([]);
   const progress = useRef(0);
   const target = useRef(0);
   const dot = useMemo(() => makeDot(), []);
@@ -301,11 +299,6 @@ function Scene({ light, animated, count }: SceneProps) {
     }
     return arr;
   }, [count]);
-
-  const ringGeometry = useMemo(() => {
-    const pts = new THREE.EllipseCurve(0, 0, 3.4, 3.4, 0, Math.PI * 2).getPoints(96);
-    return new THREE.BufferGeometry().setFromPoints(pts.map((p) => new THREE.Vector3(p.x, p.y, 0)));
-  }, []);
 
   // Document scroll → 0..1, cached so useFrame never forces layout.
   const maxScroll = useRef(1);
@@ -350,16 +343,6 @@ function Scene({ light, animated, count }: SceneProps) {
     if (points.current) {
       (points.current.material as THREE.PointsMaterial).color.copy(shown);
     }
-    rings.current.forEach((ring, i) => {
-      if (!ring) return;
-      const z = -((i + 0.5) / RINGS) * DEPTH;
-      const near = 1 - Math.min(1, Math.abs(state.camera.position.z - z) / 22);
-      const mat = ring.material as THREE.LineBasicMaterial;
-      mat.color.copy(shown);
-      mat.opacity = 0.14 + near * 0.8;
-      ring.scale.setScalar((1 + (i % 3) * 0.55) * (1 + near * 0.35));
-      if (animated) ring.rotation.z = t * 0.08 * (i % 2 ? 1 : -1) + i;
-    });
   });
 
   const blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
@@ -392,18 +375,6 @@ function Scene({ light, animated, count }: SceneProps) {
           light={light}
           animated={animated}
         />
-      ))}
-      {Array.from({ length: RINGS }, (_, i) => (
-        <lineLoop
-          key={i}
-          ref={(el) => {
-            rings.current[i] = el;
-          }}
-          geometry={ringGeometry}
-          position={[0, 0, -((i + 0.5) / RINGS) * DEPTH]}
-        >
-          <lineBasicMaterial transparent opacity={0.1} depthWrite={false} blending={blending} />
-        </lineLoop>
       ))}
     </>
   );
