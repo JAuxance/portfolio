@@ -179,11 +179,14 @@ function StageLayer({
   const c = index * step;
   const first = index === 0;
   const last = index === total - 1;
+  // Fade windows are strictly sequential: scene i is gone (c + 0.5·step)
+  // before scene i+1 starts to appear (c' - 0.5·step), so two chapters are
+  // never on screen together.
   const input = first
-    ? [0, step * 0.4, step * 0.85]
+    ? [0, step * 0.25, step * 0.5]
     : last
-      ? [c - step * 0.85, c - step * 0.4, 1]
-      : [c - step * 0.85, c - step * 0.4, c + step * 0.4, c + step * 0.85];
+      ? [c - step * 0.5, c - step * 0.25, 1]
+      : [c - step * 0.5, c - step * 0.25, c + step * 0.25, c + step * 0.5];
   const opacity = useTransform(
     progress,
     input,
