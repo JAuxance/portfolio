@@ -257,21 +257,9 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
             WebkitBackdropFilter: 'blur(18px)',
           }}
         >
-          <div className="flex items-center justify-between border-b border-[var(--color-glass-border)] px-3.5 py-2 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
-            <span>~/work/{slug}</span>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close prompt"
-              className="px-1 text-[14px] leading-none transition-colors hover:text-[var(--color-text-primary)]"
-            >
-              ×
-            </button>
-          </div>
-
           {history.length > 0 && (
             <div
-              className="flex max-h-[36svh] flex-col gap-2 overflow-y-auto px-3.5 py-3 text-[12px]"
+              className="flex max-h-[36svh] flex-col gap-2 overflow-y-auto border-b border-[var(--color-glass-border)] px-3.5 py-3 text-[12px]"
               aria-live="polite"
             >
               {history.map((h, i) => (
@@ -290,7 +278,7 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
             </div>
           )}
 
-          <label className="flex cursor-text items-center gap-2 border-t border-[var(--color-glass-border)] px-3.5 py-2.5">
+          <label className="flex cursor-text items-center gap-2 px-3.5 py-2.5">
             <span className="shrink-0 text-[12px] text-[var(--color-text-primary)]" aria-hidden>
               $
             </span>
@@ -309,6 +297,14 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] md:text-[13px]"
               style={{ ...mono, caretColor: 'var(--color-text-primary)' }}
             />
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close prompt"
+              className="shrink-0 px-1 text-[14px] leading-none text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+            >
+              ×
+            </button>
           </label>
         </div>
       ) : (
