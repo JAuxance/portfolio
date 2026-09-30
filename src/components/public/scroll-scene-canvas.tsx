@@ -51,6 +51,203 @@ function mulberry(seed: number) {
   };
 }
 
+
+/* ── Planets ───────────────────────────────────────────────────────────
+   Same visual language as the tunnel: hairlines and dots, tinted by the
+   shared accent. Three flavours — dotted globe, lat/long wireframe, and a
+   dark "eclipse" disc that hides the stars behind it.                     */
+
+type PlanetKind = 'dots' | 'lines' | 'eclipse';
+
+interface PlanetSpec {
+  kind: PlanetKind;
+  radius: number;
+  x: number;
+  y: number;
+  z: number;
+  tilt: number;
+  ring?: boolean;
+  moon?: boolean;
+}
+
+const PLANETS: PlanetSpec[] = [
+  { kind: 'dots', radius: 2.4, x: 7.5, y: 1.5, z: -16, tilt: 0.5, ring: true },
+  { kind: 'lines', radius: 3.2, x: -8, y: -1.8, z: -42, tilt: -0.4 },
+  { kind: 'eclipse', radius: 2.6, x: 7, y: -2, z: -68, tilt: 0.35, ring: true },
+  { kind: 'dots', radius: 1.7, x: -7, y: 2.4, z: -92, tilt: 0.7, moon: true },
+  { kind: 'lines', radius: 2.8, x: 8, y: 0.5, z: -118, tilt: -0.6, ring: true },
+];
+
+function dotsGeometry(radius: number, n = 520) {
+  const arr = new Float32Array(n * 3);
+  const golden = Math.PI * (3 - Math.sqrt(5));
+  for (let i = 0; i < n; i++) {
+    const y = 1 - (i / (n - 1)) * 2;
+    const r = Math.sqrt(1 - y * y);
+    const a = i * golden;
+    arr[i * 3] = Math.cos(a) * r * radius;
+    arr[i * 3 + 1] = y * radius;
+    arr[i * 3 + 2] = Math.sin(a) * r * radius;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+  return g;
+}
+
+function latLonGeometry(radius: number) {
+  const seg = 64;
+  const pts: number[] = [];
+  const push = (a: THREE.Vector3, b: THREE.Vector3) => pts.push(a.x, a.y, a.z, b.x, b.y, b.z);
+  for (const lat of [-60, -30, 0, 30, 60]) {
+    const phi = (lat * Math.PI) / 180;
+    for (let i = 0; i < seg; i++) {
+      const t0 = (i / seg) * Math.PI * 2;
+      const t1 = ((i + 1) / seg) * Math.PI * 2;
+      const at = (t: number) =>
+        new THREE.Vector3(
+          Math.cos(phi) * Math.cos(t) * radius,
+          Math.sin(phi) * radius,
+          Math.cos(phi) * Math.sin(t) * radius
+        );
+      push(at(t0), at(t1));
+    }
+  }
+  for (let m = 0; m < 6; m++) {
+    const theta = (m / 6) * Math.PI;
+    const at = (t: number) =>
+      new THREE.Vector3(
+        Math.cos(t) * Math.cos(theta) * radius,
+        Math.sin(t) * radius,
+        Math.cos(t) * Math.sin(theta) * radius
+      );
+    for (let i = 0; i < seg; i++) {
+      push(at((i / seg) * Math.PI * 2), at(((i + 1) / seg) * Math.PI * 2));
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+  return g;
+}
+
+function circleGeometry(radius: number) {
+  const pts = new THREE.EllipseCurve(0, 0, radius, radius, 0, Math.PI * 2).getPoints(120);
+  return new THREE.BufferGeometry().setFromPoints(pts.map((p) => new THREE.Vector3(p.x, p.y, 0)));
+}
+
+interface PlanetProps {
+  spec: PlanetSpec;
+  index: number;
+  dot: THREE.Texture;
+  shown: React.MutableRefObject<THREE.Color>;
+  light: boolean;
+  animated: boolean;
+}
+
+function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
+  const group = useRef<THREE.Group>(null);
+  const body = useRef<THREE.Group>(null);
+  const moon = useRef<THREE.Group>(null);
+  const { kind, radius, ring, moon: hasMoon } = spec;
+
+  const geometry = useMemo(
+    () => (kind === 'dots' ? dotsGeometry(radius) : kind === 'lines' ? latLonGeometry(radius) : null),
+    [kind, radius]
+  );
+  const ringGeo = useMemo(() => circleGeometry(radius * 1.65), [radius]);
+  const orbitGeo = useMemo(() => circleGeometry(radius * 2.4), [radius]);
+  const outline = useMemo(() => circleGeometry(radius), [radius]);
+  const blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
+  const bg = light ? '#F6F5F1' : '#0A0A0B';
+
+  useFrame((state) => {
+    if (!group.current) return;
+    const t = state.clock.elapsedTime;
+    const ahead = state.camera.position.z - spec.z; // >0 while the planet is in front
+    const fade = Math.min(1, Math.max(0, (ahead - 3) / 7)) * Math.min(1, Math.max(0, (ahead + 6) / 6));
+    if (animated && body.current) body.current.rotation.y = t * 0.12 + index;
+    if (animated && moon.current) moon.current.rotation.z = t * 0.35 + index;
+    group.current.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+      if (!m || o.userData.keep) {
+        if (m && o.userData.keep) m.opacity = fade;
+        return;
+      }
+      (m as THREE.LineBasicMaterial).color.copy(shown.current);
+      m.opacity = (o.userData.alpha ?? 0.5) * fade;
+    });
+  });
+
+  return (
+    <group
+      ref={group}
+      position={[spec.x, spec.y, spec.z]}
+      rotation={[spec.tilt, 0, spec.tilt * 0.6]}
+    >
+      <group ref={body}>
+        {kind === 'dots' && geometry && (
+          <points geometry={geometry} userData={{ alpha: 0.9 }}>
+            <pointsMaterial
+              size={0.11}
+              sizeAttenuation
+              transparent
+              map={dot}
+              alphaTest={0.02}
+              depthWrite={false}
+              blending={blending}
+            />
+          </points>
+        )}
+        {kind === 'lines' && geometry && (
+          <lineSegments geometry={geometry} userData={{ alpha: 0.35 }}>
+            <lineBasicMaterial transparent depthWrite={false} blending={blending} />
+          </lineSegments>
+        )}
+        {kind === 'eclipse' && (
+          <>
+            <mesh userData={{ keep: true }}>
+              <sphereGeometry args={[radius, 48, 32]} />
+              <meshBasicMaterial color={bg} transparent />
+            </mesh>
+            <lineLoop geometry={outline} userData={{ alpha: 0.7 }}>
+              <lineBasicMaterial transparent depthWrite={false} blending={blending} />
+            </lineLoop>
+          </>
+        )}
+      </group>
+
+      {ring && (
+        <lineLoop geometry={ringGeo} rotation={[Math.PI / 2.4, 0, 0]} userData={{ alpha: 0.45 }}>
+          <lineBasicMaterial transparent depthWrite={false} blending={blending} />
+        </lineLoop>
+      )}
+
+      {hasMoon && (
+        <>
+          <lineLoop geometry={orbitGeo} rotation={[Math.PI / 2.8, 0, 0]} userData={{ alpha: 0.18 }}>
+            <lineBasicMaterial transparent depthWrite={false} blending={blending} />
+          </lineLoop>
+          <group ref={moon} rotation={[Math.PI / 2.8, 0, 0]}>
+            <points position={[radius * 2.4, 0, 0]} userData={{ alpha: 1 }}>
+              <bufferGeometry>
+                <bufferAttribute attach="attributes-position" args={[new Float32Array([0, 0, 0]), 3]} />
+              </bufferGeometry>
+              <pointsMaterial
+                size={0.45}
+                sizeAttenuation
+                transparent
+                map={dot}
+                alphaTest={0.02}
+                depthWrite={false}
+                blending={blending}
+              />
+            </points>
+          </group>
+        </>
+      )}
+    </group>
+  );
+}
+
 interface SceneProps {
   light: boolean;
   animated: boolean;
@@ -64,6 +261,7 @@ function Scene({ light, animated, count }: SceneProps) {
   const target = useRef(0);
   const dot = useMemo(() => makeDot(), []);
   const accent = useMemo(() => new THREE.Color(), []);
+  const shownRef = useRef(new THREE.Color());
 
   const positions = useMemo(() => {
     const rand = mulberry(7);
@@ -115,6 +313,7 @@ function Scene({ light, animated, count }: SceneProps) {
 
     accentAt(p, accent);
     const shown = light ? accent.clone().multiplyScalar(0.55) : accent;
+    shownRef.current.copy(shown);
 
     // The journey: fly forward, drift with the pointer, roll slightly.
     state.camera.position.z = -p * DEPTH;
@@ -157,6 +356,17 @@ function Scene({ light, animated, count }: SceneProps) {
           blending={blending}
         />
       </points>
+      {PLANETS.map((spec, i) => (
+        <Planet
+          key={i}
+          spec={spec}
+          index={i}
+          dot={dot}
+          shown={shownRef}
+          light={light}
+          animated={animated}
+        />
+      ))}
       {Array.from({ length: RINGS }, (_, i) => (
         <lineLoop
           key={i}
