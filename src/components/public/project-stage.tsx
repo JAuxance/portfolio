@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import {
   motion,
   useMotionValueEvent,
@@ -9,72 +10,48 @@ import {
   useTransform,
   type MotionValue,
 } from 'framer-motion';
-import { CtaPill } from './section-cta';
 
 export type StageScene =
-  | { kind: 'text'; label: string; title?: string; paragraphs: string[] }
+  | { kind: 'text'; label: string; paragraphs: string[] }
   | { kind: 'layers'; label: string; layers: { layer: string; primary: string; notes: string }[] }
   | { kind: 'step'; label: string; n: string; title: string; body: string }
   | { kind: 'facts'; label: string; facts: { label: string; text: string }[] };
 
 interface ProjectStageProps {
   name: string;
-  media: { src: string; video: boolean } | null;
-  href: string | null;
-  hrefLabel: string;
+  /** Opening scene (name, status, tagline, actions…), rendered by the page. */
+  intro: ReactNode;
   scenes: StageScene[];
+  backHref: string;
+  backLabel: string;
 }
 
 const mono = { fontFamily: 'var(--font-mono)' } as const;
 
 /**
- * The project story as a pinned, full-screen "film": the media stays fixed
- * while the chapters cross-fade over it, driven entirely by scroll position.
- * Scene 0 is the media on its own; the rest dim it and carry the text.
+ * The whole project in one pinned, centered view. Nothing scrolls away: the
+ * chapters cross-fade in place, driven by scroll position, over the site's
+ * 3D backdrop. Scene 0 is the intro; a counter + progress line track the rest.
  */
-export function ProjectStage({ name, media, href, hrefLabel, scenes }: ProjectStageProps) {
+export function ProjectStage({ name, intro, scenes, backHref, backLabel }: ProjectStageProps) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
-  const total = scenes.length + 1; // + the opening media scene
+  const total = scenes.length + 1; // + the intro scene
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
   const [active, setActive] = useState(0);
   useMotionValueEvent(scrollYProgress, 'change', (p) =>
     setActive(Math.round(p * (total - 1)))
   );
-
-  const step = 1 / (total - 1);
-  const scale = useTransform(scrollYProgress, [0, 1], [1.02, 1.16]);
-  const dim = useTransform(scrollYProgress, [0, step * 0.7], [0.05, 0.88]);
-  const blur = useTransform(scrollYProgress, [0, step * 0.7], ['blur(0px)', 'blur(16px)']);
   const bar = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
-  const mediaEl = media ? (
-    media.video ? (
-      <video src={media.src} className="h-full w-full object-cover" autoPlay loop muted playsInline />
-    ) : (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={media.src} alt={name} className="h-full w-full object-cover" />
-    )
-  ) : (
-    <div
-      className="h-full w-full"
-      style={{
-        background:
-          'radial-gradient(circle at 30% 20%, rgba(140,178,255,0.14), transparent 55%), radial-gradient(circle at 70% 80%, rgba(191,140,255,0.12), transparent 55%)',
-      }}
-    />
-  );
-
-  // Reduced motion: no pinning — a plain banner followed by the chapters.
+  // Reduced motion: no pinning — the intro, then every chapter stacked.
   if (reduced) {
     return (
-      <div>
-        <div className="h-[50vh] overflow-hidden">{mediaEl}</div>
-        <div className="mx-auto flex max-w-[880px] flex-col gap-24 px-6 py-24">
-          {scenes.map((s, i) => (
-            <SceneBody key={i} scene={s} />
-          ))}
-        </div>
+      <div className="mx-auto flex max-w-[880px] flex-col items-center gap-24 px-6 pt-[120px] pb-24 text-center">
+        {intro}
+        {scenes.map((s, i) => (
+          <SceneBody key={i} scene={s} />
+        ))}
       </div>
     );
   }
@@ -82,38 +59,24 @@ export function ProjectStage({ name, media, href, hrefLabel, scenes }: ProjectSt
   return (
     <div ref={ref} style={{ height: `${total * 100}svh` }} className="relative">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
-        {/* pinned media */}
-        <motion.div aria-hidden={!media} className="absolute inset-0" style={{ scale, filter: blur }}>
-          {mediaEl}
-        </motion.div>
-        <motion.div
-          aria-hidden
-          className="absolute inset-0 bg-[var(--color-bg)]"
-          style={{ opacity: dim }}
-        />
+        {/* soft pool of darkness so text stays readable over the particles */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-r from-[var(--color-bg)]/85 via-[var(--color-bg)]/40 to-transparent"
+          className="absolute inset-0"
+          style={{
+            background:
+              'radial-gradient(ellipse 70% 60% at 50% 50%, color-mix(in srgb, var(--color-bg) 78%, transparent), transparent 75%)',
+          }}
         />
 
-        {/* scene 0: the media on its own */}
-        <StageLayer progress={scrollYProgress} index={0} total={total}>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex items-end justify-between gap-6 px-6 pb-10 md:px-12 lg:px-20">
-            <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--color-text-secondary)]" style={mono}>
-              {name}
-            </span>
-            {href && (
-              <span className="pointer-events-auto">
-                <CtaPill href={href} label={hrefLabel} variant="glass" />
-              </span>
-            )}
-          </div>
+        <StageLayer progress={scrollYProgress} index={0} total={total} active={active}>
+          <div className="flex h-full items-center justify-center px-6 pt-[60px] text-center">{intro}</div>
         </StageLayer>
 
         {scenes.map((scene, i) => (
-          <StageLayer key={i} progress={scrollYProgress} index={i + 1} total={total}>
-            <div className="mx-auto flex h-full max-w-[1280px] items-center px-6 md:px-12 lg:px-20">
-              <div className="max-w-[880px]">
+          <StageLayer key={i} progress={scrollYProgress} index={i + 1} total={total} active={active}>
+            <div className="flex h-full items-center justify-center px-6 pt-[60px] md:px-12">
+              <div className="w-full max-w-[920px]">
                 <SceneBody scene={scene} />
               </div>
             </div>
@@ -121,9 +84,14 @@ export function ProjectStage({ name, media, href, hrefLabel, scenes }: ProjectSt
         ))}
 
         {/* HUD */}
-        <div className="pointer-events-none absolute inset-x-0 top-[76px] flex items-center justify-between px-6 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] md:px-12 lg:px-20" style={mono}>
-          <span>{name}</span>
-          <span>
+        <div
+          className="absolute inset-x-0 top-[76px] flex items-center justify-between px-6 font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] md:px-12 lg:px-20"
+          style={mono}
+        >
+          <Link href={backHref} className="transition-colors hover:text-[var(--color-text-primary)]">
+            ← {backLabel}
+          </Link>
+          <span aria-label={name}>
             {String(active + 1).padStart(2, '0')} / {String(total).padStart(2, '0')}
           </span>
         </div>
@@ -142,11 +110,13 @@ function StageLayer({
   progress,
   index,
   total,
+  active,
   children,
 }: {
   progress: MotionValue<number>;
   index: number;
   total: number;
+  active: number;
   children: ReactNode;
 }) {
   const step = 1 / (total - 1);
@@ -170,7 +140,11 @@ function StageLayer({
   );
 
   return (
-    <motion.div className="pointer-events-none absolute inset-0" style={{ opacity, y }}>
+    <motion.div
+      className="absolute inset-0"
+      style={{ opacity, y, pointerEvents: active === index ? 'auto' : 'none' }}
+      aria-hidden={active !== index}
+    >
       {children}
     </motion.div>
   );
@@ -179,11 +153,12 @@ function StageLayer({
 function Label({ children }: { children: ReactNode }) {
   return (
     <span
-      className="mb-6 inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-text-tertiary)]"
+      className="mb-7 inline-flex items-center gap-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[var(--color-text-tertiary)]"
       style={mono}
     >
       <span aria-hidden className="h-px w-8 bg-[var(--color-text-tertiary)]/50" />
       {children}
+      <span aria-hidden className="h-px w-8 bg-[var(--color-text-tertiary)]/50" />
     </span>
   );
 }
@@ -192,16 +167,16 @@ function SceneBody({ scene }: { scene: StageScene }) {
   switch (scene.kind) {
     case 'text':
       return (
-        <div>
+        <div className="text-center">
           <Label>{scene.label}</Label>
-          <div className="flex flex-col gap-5">
+          <div className="mx-auto flex max-w-[760px] flex-col gap-5">
             {scene.paragraphs.map((p, i) => (
               <p
                 key={i}
                 className={
                   i === 0
                     ? 'text-[22px] leading-[1.4] text-[var(--color-text-primary)] md:text-[30px]'
-                    : 'text-[16px] leading-[1.7] text-[var(--color-text-secondary)] md:text-[18px]'
+                    : 'text-[16px] leading-[1.7] text-[var(--color-text-secondary)] md:text-[17px]'
                 }
                 style={{ letterSpacing: '-0.015em' }}
               >
@@ -213,9 +188,9 @@ function SceneBody({ scene }: { scene: StageScene }) {
       );
     case 'layers':
       return (
-        <div>
+        <div className="text-center">
           <Label>{scene.label}</Label>
-          <ul className="grid grid-cols-1 gap-x-10 gap-y-5 md:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-x-10 gap-y-5 text-left md:grid-cols-2">
             {scene.layers.map((l, i) => (
               <li key={i} className="border-t border-[var(--color-glass-border-hover)] pt-4">
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]" style={mono}>
@@ -232,31 +207,33 @@ function SceneBody({ scene }: { scene: StageScene }) {
       );
     case 'step':
       return (
-        <div className="relative">
+        <div className="relative text-center">
           <span
             aria-hidden
-            className="pointer-events-none absolute -left-2 -top-24 select-none font-mono text-[140px] font-semibold leading-none text-[var(--color-text-primary)]/[0.06] md:text-[220px]"
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[62%] select-none font-mono text-[200px] font-semibold leading-none text-[var(--color-text-primary)]/[0.05] md:text-[340px]"
             style={mono}
           >
             {scene.n}
           </span>
-          <Label>{scene.label}</Label>
-          <h3
-            className="mb-5 text-[34px] font-medium leading-[1.08] text-[var(--color-text-primary)] md:text-[56px]"
-            style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}
-          >
-            {scene.title}
-          </h3>
-          <p className="max-w-[640px] text-[16px] leading-[1.7] text-[var(--color-text-secondary)] md:text-[18px]">
-            {scene.body}
-          </p>
+          <div className="relative">
+            <Label>{scene.label}</Label>
+            <h3
+              className="mx-auto mb-6 max-w-[820px] text-[34px] font-medium leading-[1.08] text-[var(--color-text-primary)] md:text-[58px]"
+              style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}
+            >
+              {scene.title}
+            </h3>
+            <p className="mx-auto max-w-[620px] text-[16px] leading-[1.7] text-[var(--color-text-secondary)] md:text-[18px]">
+              {scene.body}
+            </p>
+          </div>
         </div>
       );
     case 'facts':
       return (
-        <div>
+        <div className="text-center">
           <Label>{scene.label}</Label>
-          <ul className="grid grid-cols-1 gap-x-10 gap-y-7 md:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-x-10 gap-y-7 text-left md:grid-cols-2">
             {scene.facts.map((f, i) => (
               <li key={i} className="border-t border-[var(--color-glass-border-hover)] pt-4">
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)]" style={mono}>

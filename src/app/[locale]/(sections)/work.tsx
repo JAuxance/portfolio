@@ -8,7 +8,6 @@ import type { Project } from '@prisma/client';
 import { SectionTitle } from '@/components/public/section-title';
 import { SectionCta } from '@/components/public/section-cta';
 import { StatusPill } from '@/components/public/status-pill';
-import { isVideoUrl } from '@/lib/media';
 import { reveal } from '@/lib/motion';
 
 interface WorkSectionProps {
@@ -19,9 +18,8 @@ interface WorkSectionProps {
 
 /**
  * Work as a file index: numbered hairline rows on the left, and a sticky
- * preview panel on the right that crossfades to the hovered project's
- * media. Rows use the same compact typographic grammar as the rest of the site;
- * on mobile the panel disappears and each row carries its media inline.
+ * spec card on the right that crossfades to the hovered project's details. Rows use the same compact typographic grammar as the rest of the site;
+ * on mobile the card disappears and each row carries its tagline inline.
  */
 export function WorkSection({ projects, locale, githubUrl }: WorkSectionProps) {
   const t = useTranslations('work');
@@ -85,11 +83,6 @@ export function WorkSection({ projects, locale, githubUrl }: WorkSectionProps) {
                     {tagline}
                   </p>
 
-                  {p.heroImage && (
-                    <div className="relative ml-[30px] aspect-[16/9] overflow-hidden rounded-[12px] border border-[var(--color-glass-border)] md:ml-[38px] lg:hidden">
-                      <ProjectMedia src={p.heroImage} />
-                    </div>
-                  )}
                 </Link>
                 </div>
               </motion.li>
@@ -107,40 +100,60 @@ export function WorkSection({ projects, locale, githubUrl }: WorkSectionProps) {
             className="hidden lg:block"
           >
             <div className="card-breathe sticky top-24">
-              <div className="glass relative aspect-[4/3] overflow-hidden" style={{ borderRadius: 20 }}>
-                <AnimatePresence mode="sync">
+              <div className="glass relative min-h-[380px] overflow-hidden p-7" style={{ borderRadius: 20 }}>
+                <AnimatePresence mode="wait">
                   <motion.div
                     key={current.id}
-                    initial={{ opacity: 0, scale: 1.03 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute inset-0"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="flex h-full min-h-[324px] flex-col"
                   >
-                    {current.heroImage ? (
-                      <ProjectMedia src={current.heroImage} />
-                    ) : (
-                      <div
-                        className="grid h-full w-full place-items-center"
-                        style={{
-                          background:
-                            'radial-gradient(circle at 30% 20%, rgba(140,178,255,0.12), transparent 50%), radial-gradient(circle at 70% 80%, rgba(191,140,255,0.10), transparent 50%)',
-                        }}
-                      >
-                        <span
-                          className="font-mono text-[12px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]"
-                          style={{ fontFamily: 'var(--font-mono)' }}
-                        >
-                          {locale === 'fr' ? current.nameFr : current.nameEn}
-                        </span>
-                      </div>
+                    <div
+                      className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)]"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      <span>
+                        {String(active + 1).padStart(2, '0')} / {String(ordered.length).padStart(2, '0')}
+                      </span>
+                      <StatusPill status={current.status} locale={locale} />
+                    </div>
+
+                    <h3
+                      className="mt-8 text-[34px] font-semibold leading-[1.02] text-[var(--color-text-primary)]"
+                      style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
+                    >
+                      {locale === 'fr' ? current.nameFr : current.nameEn}
+                    </h3>
+                    <p className="mt-4 text-[14px] leading-[1.65] text-[var(--color-text-secondary)]">
+                      {locale === 'fr' ? current.taglineFr : current.taglineEn}
+                    </p>
+
+                    {current.stack.length > 0 && (
+                      <ul className="mt-6 flex flex-wrap gap-1.5">
+                        {current.stack.slice(0, 6).map((tech) => (
+                          <li
+                            key={tech}
+                            className="rounded-full border border-[var(--color-glass-border-hover)] px-2.5 py-0.5 font-mono text-[10px] text-[var(--color-text-secondary)]"
+                            style={{ fontFamily: 'var(--font-mono)' }}
+                          >
+                            {tech}
+                          </li>
+                        ))}
+                      </ul>
                     )}
+
+                    <Link
+                      href={`/${locale}/work/${current.slug}`}
+                      className="mt-auto inline-flex items-center gap-2 pt-8 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-primary)]"
+                      style={{ fontFamily: 'var(--font-mono)' }}
+                    >
+                      {t('viewProject')} <span aria-hidden>→</span>
+                    </Link>
                   </motion.div>
                 </AnimatePresence>
               </div>
-              <p className="mt-4 max-w-[380px] text-[13px] leading-[1.6] text-[var(--color-text-secondary)]">
-                {locale === 'fr' ? current.taglineFr : current.taglineEn}
-              </p>
             </div>
           </motion.div>
         )}
@@ -149,21 +162,4 @@ export function WorkSection({ projects, locale, githubUrl }: WorkSectionProps) {
       {githubUrl && <SectionCta label={t('allCode')} href={githubUrl} variant="text" />}
     </section>
   );
-}
-
-function ProjectMedia({ src }: { src: string }) {
-  if (isVideoUrl(src)) {
-    return (
-      <video
-        src={src}
-        className="absolute inset-0 h-full w-full object-cover"
-        autoPlay
-        loop
-        muted
-        playsInline
-      />
-    );
-  }
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" />;
 }

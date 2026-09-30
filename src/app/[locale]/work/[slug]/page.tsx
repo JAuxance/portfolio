@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { setRequestLocale, getTranslations } from 'next-intl/server';
 import { db } from '@/lib/db';
 import { locales } from '@/lib/i18n-config';
-import { isVideoUrl } from '@/lib/media';
 import { StatusPill } from '@/components/public/status-pill';
 import { ProjectStage, type StageScene } from '@/components/public/project-stage';
 import { BuildIn } from '@/components/public/build-in';
@@ -84,75 +83,64 @@ export default async function ProjectPage({ params }: PageProps) {
 
   return (
     <>
-      {/* Hero — each block "builds" in sequence; keyed by slug so swapping
-          projects (Prev/Next) replays the construction. */}
-      <section className="mx-auto flex min-h-[92svh] max-w-[1280px] flex-col justify-center px-6 pt-[120px] pb-16 md:px-12 md:pt-[140px] lg:px-20">
-        <BuildIn key={`${slug}-back`} index={0}>
-          <Link
-            href={`/${locale}#work`}
-            className="mb-10 inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
-            style={{ fontFamily: 'var(--font-mono)' }}
-          >
-            ← {t('back')}
-          </Link>
-        </BuildIn>
-
-        <BuildIn key={`${slug}-status`} index={1} className="mb-6 flex items-center gap-4">
-          <StatusPill status={project.status} locale={loc} withPill />
-        </BuildIn>
-
-        <BuildIn key={`${slug}-name`} index={2}>
-          <h1
-            className="mb-8 text-[52px] md:text-[96px] lg:text-[132px] font-semibold leading-[0.95] text-[var(--color-text-primary)]"
-            style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
-          >
-            {name}
-          </h1>
-        </BuildIn>
-
-        <BuildIn key={`${slug}-tagline`} index={3}>
-          <p
-            className="max-w-[800px] text-[18px] md:text-[22px] leading-[1.45] text-[var(--color-text-secondary)]"
-            style={{ letterSpacing: '-0.015em' }}
-          >
-            {tagline}
-          </p>
-        </BuildIn>
-
-        {(project.repoUrl || project.liveUrl) && (
-          <BuildIn key={`${slug}-actions`} index={4} className="mt-8 flex flex-wrap items-center gap-3">
-            {/* The rarer destination gets the solid pill; the other stays glass. */}
-            {project.liveUrl ? (
-              <>
-                <CtaPill href={project.liveUrl} label={t('live')} variant="solid" />
-                {project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="glass" />}
-              </>
-            ) : (
-              project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="solid" />
-            )}
-          </BuildIn>
-        )}
-
-        <BuildIn
-          key={`${slug}-meta`}
-          index={5}
-          className="mt-14 grid grid-cols-2 gap-6 border-t border-[var(--color-glass-border)] pt-6 md:grid-cols-4 md:gap-8"
-        >
-          <MetaCol label={t('timeline')} value={timeline ?? '—'} />
-          <MetaCol label={t('role')} value={role ?? '—'} />
-          <MetaCol label={t('team')} value={team ?? '—'} />
-          <MetaCol label={t('contextLabel')} value={contextLabel ?? '—'} />
-        </BuildIn>
-      </section>
-
-      {/* The story: a pinned, full-screen film driven by scroll. */}
+      {/* One pinned, centered view: intro first, then each chapter in place. */}
       <ProjectStage
         key={`${slug}-stage`}
         name={name}
-        media={project.heroImage ? { src: project.heroImage, video: isVideoUrl(project.heroImage) } : null}
-        href={project.liveUrl ?? project.repoUrl}
-        hrefLabel={project.liveUrl ? t('live') : t('code')}
+        backHref={`/${locale}#work`}
+        backLabel={t('back')}
         scenes={scenes}
+        intro={
+          <div className="flex max-w-[1000px] flex-col items-center gap-6">
+            <StatusPill status={project.status} locale={loc} withPill />
+            <h1
+              className="text-[52px] font-semibold leading-[0.95] text-[var(--color-text-primary)] md:text-[96px] lg:text-[120px]"
+              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}
+            >
+              {name}
+            </h1>
+            <p
+              className="max-w-[720px] text-[17px] leading-[1.45] text-[var(--color-text-secondary)] md:text-[21px]"
+              style={{ letterSpacing: '-0.015em' }}
+            >
+              {tagline}
+            </p>
+
+            {project.stack.length > 0 && (
+              <ul className="flex flex-wrap justify-center gap-2">
+                {project.stack.map((s) => (
+                  <li
+                    key={s}
+                    className="rounded-full border border-[var(--color-glass-border-hover)] px-3 py-1 font-mono text-[11px] text-[var(--color-text-secondary)]"
+                    style={{ fontFamily: 'var(--font-mono)' }}
+                  >
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {(project.repoUrl || project.liveUrl) && (
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                {project.liveUrl ? (
+                  <>
+                    <CtaPill href={project.liveUrl} label={t('live')} variant="solid" />
+                    {project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="glass" />}
+                  </>
+                ) : (
+                  project.repoUrl && <CtaPill href={project.repoUrl} label={t('code')} variant="solid" />
+                )}
+              </div>
+            )}
+
+            <div className="mt-4 grid w-full grid-cols-2 gap-x-8 gap-y-5 border-t border-[var(--color-glass-border)] pt-6 text-left md:grid-cols-4">
+              <MetaCol label={t('timeline')} value={timeline ?? '—'} />
+              <MetaCol label={t('role')} value={role ?? '—'} />
+              <MetaCol label={t('team')} value={team ?? '—'} />
+              <MetaCol label={t('contextLabel')} value={contextLabel ?? '—'} />
+            </div>
+          </div>
+        }
       />
 
       {/* Prev/Next */}
