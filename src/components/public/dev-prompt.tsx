@@ -48,18 +48,17 @@ const HELP = [
   '  code · live        open the repo / the live site',
   'misc:  theme · clear · echo · date · help',
   '',
-  'tip: press / anywhere to open this prompt, Esc to close it.',
+  'tip: press / anywhere to focus this prompt, Esc to leave it.',
 ];
 
 /**
- * A dev-style quick-nav prompt for project pages: cd .. to go back, cd ../name
+ * A dev-style quick-nav prompt for project pages, always open at the bottom-left: cd .. to go back, cd ../name
  * to hop to another project, cd <chapter> to jump inside this one.
  */
 export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, onGoto }: DevPromptProps) {
   const router = useRouter();
   const { toggle } = useTheme();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [history, setHistory] = useState<Line[]>([]);
   const past = useRef<string[]>([]);
@@ -72,15 +71,11 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       e.preventDefault();
-      setOpen(true);
+      inputRef.current?.focus();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-
-  useEffect(() => {
-    if (open) inputRef.current?.focus();
-  }, [open]);
 
   const idx = projects.findIndex((p) => p.slug === slug);
   const home = `/${locale}`;
@@ -230,7 +225,7 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
       submit();
     } else if (e.key === 'Escape') {
       setValue('');
-      setOpen(false);
+      inputRef.current?.blur();
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const next = Math.min(cursor.current + 1, past.current.length - 1);
@@ -248,7 +243,6 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
 
   return (
     <div className="absolute bottom-5 left-5 z-20 md:bottom-6 md:left-6" style={mono}>
-      {open ? (
         <div
           className="flex w-[min(400px,calc(100vw-40px))] flex-col overflow-hidden rounded-2xl border border-[var(--color-glass-border-hover)] shadow-[var(--shadow-card)]"
           style={{
@@ -297,28 +291,8 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
               className="min-w-0 flex-1 bg-transparent text-[16px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] md:text-[13px]"
               style={{ ...mono, caretColor: 'var(--color-text-primary)' }}
             />
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="Close prompt"
-              className="shrink-0 px-1 text-[14px] leading-none text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
-            >
-              ×
-            </button>
           </label>
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label="Open quick navigation prompt (press /)"
-          title="Quick nav — press /"
-          className="glass-thin glass-hover grid h-11 w-11 place-items-center rounded-full text-[13px] font-semibold text-[var(--color-text-secondary)] shadow-[var(--shadow-card)] transition-all duration-300 hover:scale-105 hover:text-[var(--color-text-primary)]"
-          style={{ ...mono, borderRadius: 999 }}
-        >
-          &gt;_
-        </button>
-      )}
     </div>
   );
 }
