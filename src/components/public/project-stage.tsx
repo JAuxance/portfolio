@@ -89,7 +89,7 @@ export function ProjectStage({ intro, scenes, outro, backHref, backLabel, dev }:
         ))}
         {outro}
         {dev && (
-          <div className="relative mt-8 h-24 w-screen max-w-none">
+          <div className="relative mt-8 h-20 w-full self-start">
             <DevPrompt {...dev} chapters={[]} />
           </div>
         )}

@@ -48,7 +48,7 @@ const HELP = [
   '  code · live        open the repo / the live site',
   'misc:  theme · clear · echo · date · help',
   '',
-  'tip: press / anywhere to focus this prompt, Esc to leave it.',
+  'tip: press / anywhere to open this prompt, Esc to close it.',
 ];
 
 /**
@@ -59,6 +59,7 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
   const router = useRouter();
   const { toggle } = useTheme();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [open, setOpen] = useState(false);
   const [value, setValue] = useState('');
   const [history, setHistory] = useState<Line[]>([]);
   const past = useRef<string[]>([]);
@@ -71,11 +72,15 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       e.preventDefault();
-      inputRef.current?.focus();
+      setOpen(true);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
 
   const idx = projects.findIndex((p) => p.slug === slug);
   const home = `/${locale}`;
@@ -224,9 +229,8 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
       e.preventDefault();
       submit();
     } else if (e.key === 'Escape') {
-      setHistory([]);
       setValue('');
-      inputRef.current?.blur();
+      setOpen(false);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const next = Math.min(cursor.current + 1, past.current.length - 1);
@@ -243,67 +247,82 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
   }
 
   return (
-    <div className="absolute inset-x-0 bottom-0 z-20">
-      {history.length > 0 && (
+    <div className="absolute bottom-5 left-5 z-20 md:bottom-6 md:left-6" style={mono}>
+      {open ? (
         <div
-          className="mx-6 mb-2 flex max-h-[40svh] flex-col gap-2 overflow-y-auto rounded-xl border border-[var(--color-glass-border)] px-4 py-3 text-[12px] md:mx-12 lg:mx-20"
+          className="flex w-[min(400px,calc(100vw-40px))] flex-col overflow-hidden rounded-2xl border border-[var(--color-glass-border-hover)] shadow-[var(--shadow-card)]"
           style={{
-            ...mono,
-            background: 'color-mix(in srgb, var(--color-bg) 82%, transparent)',
-            backdropFilter: 'blur(16px)',
+            background: 'color-mix(in srgb, var(--color-bg) 86%, transparent)',
+            backdropFilter: 'blur(18px)',
+            WebkitBackdropFilter: 'blur(18px)',
           }}
-          aria-live="polite"
         >
-          {history.map((h, i) => (
-            <div key={i}>
-              <div className="text-[var(--color-text-secondary)]">
-                <span className="text-[var(--color-text-tertiary)]">$ </span>
-                {h.cmd}
-              </div>
-              {h.out.length > 0 && (
-                <pre className="whitespace-pre-wrap break-words text-[var(--color-text-tertiary)]" style={mono}>
-                  {h.out.join('\n')}
-                </pre>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
+          <div className="flex items-center justify-between border-b border-[var(--color-glass-border)] px-3.5 py-2 text-[10px] uppercase tracking-[0.16em] text-[var(--color-text-tertiary)]">
+            <span>~/work/{slug}</span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              aria-label="Close prompt"
+              className="px-1 text-[14px] leading-none transition-colors hover:text-[var(--color-text-primary)]"
+            >
+              ×
+            </button>
+          </div>
 
-      <label
-        className="flex cursor-text items-center gap-2 border-t border-[var(--color-glass-border)] px-6 py-3 md:px-12 lg:px-20"
-        style={{
-          ...mono,
-          background: 'color-mix(in srgb, var(--color-bg) 70%, transparent)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-        }}
-      >
-        <span className="hidden shrink-0 text-[12px] text-[var(--color-text-tertiary)] sm:inline" aria-hidden>
-          auxance@portfolio:~/work/{slug}
-        </span>
-        <span className="shrink-0 text-[12px] text-[var(--color-text-tertiary)] sm:hidden" aria-hidden>
-          ~/{slug}
-        </span>
-        <span className="shrink-0 text-[12px] text-[var(--color-text-primary)]" aria-hidden>
-          $
-        </span>
-        <input
-          ref={inputRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={onKeyDown}
-          aria-label="Quick navigation prompt"
-          placeholder="type help · press /"
-          autoComplete="off"
-          autoCapitalize="off"
-          autoCorrect="off"
-          spellCheck={false}
-          enterKeyHint="send"
-          className="min-w-0 flex-1 bg-transparent text-[16px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] md:text-[13px]"
-          style={{ ...mono, caretColor: 'var(--color-text-primary)' }}
-        />
-      </label>
+          {history.length > 0 && (
+            <div
+              className="flex max-h-[36svh] flex-col gap-2 overflow-y-auto px-3.5 py-3 text-[12px]"
+              aria-live="polite"
+            >
+              {history.map((h, i) => (
+                <div key={i}>
+                  <div className="text-[var(--color-text-secondary)]">
+                    <span className="text-[var(--color-text-tertiary)]">$ </span>
+                    {h.cmd}
+                  </div>
+                  {h.out.length > 0 && (
+                    <pre className="whitespace-pre-wrap break-words text-[var(--color-text-tertiary)]" style={mono}>
+                      {h.out.join('\n')}
+                    </pre>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <label className="flex cursor-text items-center gap-2 border-t border-[var(--color-glass-border)] px-3.5 py-2.5">
+            <span className="shrink-0 text-[12px] text-[var(--color-text-primary)]" aria-hidden>
+              $
+            </span>
+            <input
+              ref={inputRef}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={onKeyDown}
+              aria-label="Quick navigation prompt"
+              placeholder="help · cd .. · ls"
+              autoComplete="off"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              enterKeyHint="send"
+              className="min-w-0 flex-1 bg-transparent text-[16px] text-[var(--color-text-primary)] outline-none placeholder:text-[var(--color-text-tertiary)] md:text-[13px]"
+              style={{ ...mono, caretColor: 'var(--color-text-primary)' }}
+            />
+          </label>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label="Open quick navigation prompt (press /)"
+          title="Quick nav — press /"
+          className="glass-thin glass-hover grid h-11 w-11 place-items-center rounded-full text-[13px] font-semibold text-[var(--color-text-secondary)] shadow-[var(--shadow-card)] transition-all duration-300 hover:scale-105 hover:text-[var(--color-text-primary)]"
+          style={{ ...mono, borderRadius: 999 }}
+        >
+          &gt;_
+        </button>
+      )}
     </div>
   );
 }
