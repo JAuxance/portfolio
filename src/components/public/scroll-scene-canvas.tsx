@@ -183,8 +183,7 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
       rotation={[spec.tilt, 0, spec.tilt * 0.6]}
     >
       {/* atmosphere: a soft glow behind the body */}
-      {kind !== 'eclipse' && (
-      <points userData={{ alpha: 0.4 }}>
+      <points userData={{ alpha: kind === 'eclipse' ? 0.55 : 0.4 }}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[new Float32Array([0, 0, -0.5]), 3]} />
         </bufferGeometry>
@@ -197,7 +196,6 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
           blending={blending}
         />
       </points>
-      )}
 
       <group ref={body}>
         {/* solid core: hides the far side so the globe reads as a volume */}
