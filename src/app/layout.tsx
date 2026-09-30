@@ -42,7 +42,7 @@ export async function generateMetadata(): Promise<Metadata> {
     requestHeaders.get('x-forwarded-proto') ??
     (host.startsWith('localhost') ? 'http' : 'https');
   const origin = `${protocol}://${host}`;
-  const socialImage = new URL('/og.png', origin).toString();
+  const socialImage = new URL('/og-v2.png', origin).toString();
 
   return {
     metadataBase: new URL(origin),
@@ -52,7 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: 'Auxance / Portfolio — Writing in public.',
       description,
       type: 'website',
-      images: [{ url: socialImage, width: 1715, height: 909, alt: 'Auxance — Writing in public.' }],
+      images: [{ url: socialImage, width: 1200, height: 630, alt: 'Auxance Jourdan — full-stack student building toward ML research.' }],
     },
     twitter: {
       card: 'summary_large_image',
