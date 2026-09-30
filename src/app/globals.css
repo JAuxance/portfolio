@@ -492,3 +492,8 @@
     min-height: auto;
   }
 }
+
+/* Project pages end on the pinned story — no footer to scroll into. */
+body[data-pinned-stage] footer {
+  display: none;
+}

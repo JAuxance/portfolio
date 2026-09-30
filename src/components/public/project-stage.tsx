@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import {
   motion,
@@ -53,6 +53,16 @@ export function ProjectStage({ intro, scenes, outro, backHref, backLabel, dev }:
     setActive(Math.round(p * (total - 1)))
   );
   const bar = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
+  // The pinned story is the end of the page: hide the footer so the scroll
+  // stops on the last scene instead of running on below it.
+  useEffect(() => {
+    if (reduced) return;
+    document.body.dataset.pinnedStage = '';
+    return () => {
+      delete document.body.dataset.pinnedStage;
+    };
+  }, [reduced]);
 
   // Directory-style chapter names for the prompt: intro, context, process-1…
   const chapters: DevChapter[] = (() => {
