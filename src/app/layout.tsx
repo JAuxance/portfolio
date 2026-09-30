@@ -49,14 +49,14 @@ export async function generateMetadata(): Promise<Metadata> {
     title: 'Auxance Jourdan — Portfolio',
     description,
     openGraph: {
-      title: 'Auxance / Portfolio — Writing in public.',
+      title: 'Auxance / Portfolio',
       description,
       type: 'website',
       images: [{ url: socialImage, width: 1200, height: 630, alt: 'Auxance Jourdan — Full-stack. ML.' }],
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'Auxance / Portfolio — Writing in public.',
+      title: 'Auxance / Portfolio',
       description,
       images: [socialImage],
     },
