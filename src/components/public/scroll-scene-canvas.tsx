@@ -172,7 +172,10 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
         return;
       }
       (m as THREE.LineBasicMaterial).color.copy(shown.current);
-      m.opacity = (o.userData.alpha ?? 0.5) * fade;
+      const base = o.userData.alpha ?? 0.5;
+      // light mode: normal blending — stronger lines, much softer halo
+      const a = light ? (o.userData.halo ? base * 0.3 : Math.min(1, base * 1.6)) : base;
+      m.opacity = a * fade;
     });
   });
 
@@ -183,7 +186,7 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
       rotation={[spec.tilt, 0, spec.tilt * 0.6]}
     >
       {/* atmosphere: a soft glow behind the body */}
-      <points userData={{ alpha: kind === 'eclipse' ? 0.55 : 0.4 }}>
+      <points userData={{ alpha: kind === 'eclipse' ? 0.55 : 0.4, halo: true }}>
         <bufferGeometry>
           <bufferAttribute attach="attributes-position" args={[new Float32Array([0, 0, -0.5]), 3]} />
         </bufferGeometry>
@@ -206,7 +209,7 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
         {kind === 'dots' && geometry && (
           <points geometry={geometry} userData={{ alpha: 1 }}>
             <pointsMaterial
-              size={0.17}
+              size={light ? 0.27 : 0.17}
               sizeAttenuation
               transparent
               map={dot}
@@ -445,7 +448,13 @@ function Scene({ light, animated, count }: SceneProps) {
     const t = state.clock.elapsedTime;
 
     accentAt(p, accent);
-    const shown = light ? accent.clone().multiplyScalar(0.55) : accent;
+    // On the cream background the accent becomes a saturated dark "ink".
+    let shown = accent;
+    if (light) {
+      const hsl = { h: 0, s: 0, l: 0 };
+      accent.getHSL(hsl);
+      shown = new THREE.Color().setHSL(hsl.h, Math.max(hsl.s, 0.55), 0.36);
+    }
     shownRef.current.copy(shown);
 
     // The journey: fly forward, drift with the pointer, roll slightly.
@@ -469,12 +478,12 @@ function Scene({ light, animated, count }: SceneProps) {
           <bufferAttribute attach="attributes-position" args={[positions, 3]} />
         </bufferGeometry>
         <pointsMaterial
-          size={0.13}
+          size={light ? 0.2 : 0.13}
           sizeAttenuation
           map={dot}
           alphaTest={0.02}
           transparent
-          opacity={light ? 0.7 : 0.95}
+          opacity={light ? 0.95 : 0.95}
           depthWrite={false}
           blending={blending}
         />
