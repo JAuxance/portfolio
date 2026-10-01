@@ -9,10 +9,16 @@ export function easterEgg(cmd: string, arg: string): string[] | null {
     case 'rm':
       return ['nice try. everything here is read-only. (and backed up.)'];
     case 'comet':
+    case 'comets':
     case 'stars':
-    case 'shoot':
-      window.dispatchEvent(new CustomEvent('portfolio:comet'));
-      return ['make a wish ✦'];
+    case 'shoot': {
+      const asked = arg ? Number.parseInt(arg, 10) : 1;
+      if (Number.isNaN(asked) || asked < 1) return ['usage: comet [1-50]'];
+      const count = Math.min(asked, 50);
+      window.dispatchEvent(new CustomEvent('portfolio:comet', { detail: { count } }));
+      if (count === 1) return ['make a wish ✦'];
+      return [asked > 50 ? `${count} comets (capped at 50) ✦` : `${count} comets ✦`];
+    }
     case 'hello':
     case 'hi':
     case 'hey':
