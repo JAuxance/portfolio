@@ -5,7 +5,7 @@ import { locales } from '@/lib/i18n-config';
 import { StatusPill } from '@/components/public/status-pill';
 import { ProjectStage, type StageScene } from '@/components/public/project-stage';
 import { CtaPill } from '@/components/public/section-cta';
-import type { ArchitectureLayer, Decision, Lesson } from '@/types/content';
+import type { ArchitectureLayer } from '@/types/content';
 
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>;
@@ -40,8 +40,6 @@ export default async function ProjectPage({ params }: PageProps) {
   const team = loc === 'fr' ? project.teamFr : project.teamEn;
   const contextLabel = loc === 'fr' ? project.contextLabelFr : project.contextLabelEn;
   const architecture = (project.architecture as unknown as ArchitectureLayer[] | null) ?? [];
-  const decisions = (project.decisions as unknown as Decision[] | null) ?? [];
-  const lessons = (project.lessons as unknown as Lesson[] | null) ?? [];
 
   const scenes: StageScene[] = [
     ...(ctx.length > 0 ? [{ kind: 'text' as const, label: t('context'), paragraphs: ctx }] : []),
@@ -55,22 +53,6 @@ export default async function ProjectPage({ params }: PageProps) {
               primary: l.primary,
               notes: loc === 'fr' ? l.notesFr : l.notesEn,
             })),
-          },
-        ]
-      : []),
-    ...decisions.map((d) => ({
-      kind: 'step' as const,
-      label: t('process'),
-      n: d.n,
-      title: loc === 'fr' ? d.titleFr : d.titleEn,
-      body: loc === 'fr' ? d.bodyFr : d.bodyEn,
-    })),
-    ...(lessons.length > 0
-      ? [
-          {
-            kind: 'facts' as const,
-            label: t('outcome'),
-            facts: lessons.map((l) => ({ label: l.label, text: loc === 'fr' ? l.textFr : l.textEn })),
           },
         ]
       : []),

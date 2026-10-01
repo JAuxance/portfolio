@@ -493,7 +493,10 @@
   }
 }
 
-/* Project pages end on the pinned story — no footer to scroll into. */
-body[data-pinned-stage] footer {
-  display: none;
+/* Desktop project pages end on the pinned story — no footer to scroll into.
+   On phones the story scrolls normally and the footer stays. */
+@media (min-width: 768px) {
+  body[data-pinned-stage] footer {
+    display: none;
+  }
 }

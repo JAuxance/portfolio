@@ -89,26 +89,26 @@ export function ProjectStage({ intro, scenes, outro, backHref, backLabel, dev }:
     window.scrollTo({ top: top + (clamped / (total - 1)) * travel, behavior: 'smooth' });
   };
 
-  // Reduced motion: no pinning — the intro, then every chapter stacked.
-  if (reduced) {
-    return (
-      <div className="mx-auto flex max-w-[880px] flex-col items-center gap-24 px-6 pt-[120px] pb-24 text-center">
-        {intro}
-        {scenes.map((s, i) => (
-          <SceneBody key={i} scene={s} />
-        ))}
-        {outro}
-        {dev && (
-          <div className="relative mt-8 h-20 w-full self-start">
-            <DevPrompt {...dev} chapters={[]} />
-          </div>
-        )}
-      </div>
-    );
-  }
+  const stacked = (
+    <StackedStory
+      intro={intro}
+      scenes={scenes}
+      outro={outro}
+      backHref={backHref}
+      backLabel={backLabel}
+      dev={dev}
+    />
+  );
+
+  // Reduced motion: no pinning on any screen size.
+  if (reduced) return stacked;
 
   return (
-    <div ref={ref} style={{ height: `${total * 100}svh` }} className="relative">
+    <>
+      {/* Phones: plain scrolling — pinning one chapter per screen does not fit. */}
+      <div className="md:hidden">{stacked}</div>
+      <div className="hidden md:block">
+        <div ref={ref} style={{ height: `${total * 100}svh` }} className="relative">
       <div className="sticky top-0 h-[100svh] overflow-hidden">
         {/* soft pool of darkness so text stays readable over the particles */}
         <div
@@ -157,6 +157,41 @@ export function ProjectStage({ intro, scenes, outro, backHref, backLabel, dev }:
 
         {dev && <DevPrompt {...dev} chapters={chapters} onGoto={gotoScene} />}
       </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** The whole story as a normal top-to-bottom page (phones, reduced motion). */
+function StackedStory({
+  intro,
+  scenes,
+  outro,
+  backHref,
+  backLabel,
+  dev,
+}: Pick<ProjectStageProps, 'intro' | 'scenes' | 'outro' | 'backHref' | 'backLabel' | 'dev'>) {
+  return (
+    <div className="mx-auto flex max-w-[880px] flex-col items-center gap-16 px-6 pb-20 pt-[88px] text-center md:gap-24 md:pt-[120px]">
+      <Link
+        href={backHref}
+        className="self-start font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--color-text-tertiary)] transition-colors hover:text-[var(--color-text-primary)]"
+        style={mono}
+      >
+        ← {backLabel}
+      </Link>
+      {intro}
+      {scenes.map((s, i) => (
+        <SceneBody key={i} scene={s} />
+      ))}
+      {outro}
+      {/* the dev prompt is a desktop nicety — never on phones */}
+      {dev && (
+        <div className="relative mt-8 hidden h-20 w-full self-start md:block">
+          <DevPrompt {...dev} chapters={[]} />
+        </div>
+      )}
     </div>
   );
 }
