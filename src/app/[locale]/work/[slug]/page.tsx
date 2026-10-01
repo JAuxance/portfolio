@@ -7,6 +7,14 @@ import { ProjectStage, type StageScene } from '@/components/public/project-stage
 import { CtaPill } from '@/components/public/section-cta';
 import type { ArchitectureLayer } from '@/types/content';
 
+/** Demo videos per project, served from public/projects. */
+const PROJECT_VIDEOS: Record<string, { src: string; poster?: string; ratio: 'landscape' | 'portrait' }[]> = {
+  manager: [
+    { src: '/projects/manager-launch-16x9.mp4', poster: '/projects/manager-launch-16x9.webp', ratio: 'landscape' },
+    { src: '/projects/manager-launch-9x16.mp4', poster: '/projects/manager-launch-9x16.webp', ratio: 'portrait' },
+  ],
+};
+
 interface PageProps {
   params: Promise<{ locale: string; slug: string }>;
 }
@@ -43,6 +51,7 @@ export default async function ProjectPage({ params }: PageProps) {
 
   const scenes: StageScene[] = [
     ...(ctx.length > 0 ? [{ kind: 'text' as const, label: t('context'), paragraphs: ctx }] : []),
+    ...(PROJECT_VIDEOS[slug] ? [{ kind: 'videos' as const, label: t('demo'), videos: PROJECT_VIDEOS[slug] }] : []),
     ...(architecture.length > 0
       ? [
           {

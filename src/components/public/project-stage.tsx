@@ -15,6 +15,7 @@ import { DevPrompt, type DevChapter, type DevProject } from './dev-prompt';
 export type StageScene =
   | { kind: 'text'; label: string; paragraphs: string[] }
   | { kind: 'layers'; label: string; layers: { layer: string; primary: string; notes: string }[] }
+  | { kind: 'videos'; label: string; videos: { src: string; poster?: string; ratio: 'landscape' | 'portrait' }[] }
   | { kind: 'step'; label: string; n: string; title: string; body: string }
   | { kind: 'facts'; label: string; facts: { label: string; text: string }[] };
 
@@ -297,6 +298,31 @@ function SceneBody({ scene }: { scene: StageScene }) {
               </li>
             ))}
           </ul>
+        </div>
+      );
+    case 'videos':
+      return (
+        <div className="text-center">
+          <Label>{scene.label}</Label>
+          <div className="flex flex-col items-center justify-center gap-6 md:flex-row md:items-center">
+            {scene.videos.map((v) => (
+              // Each cut is made for one device: portrait on phones, landscape on desktop.
+              // preload="none" keeps the (heavy) file from loading until play is pressed.
+              <video
+                key={v.src}
+                src={v.src}
+                poster={v.poster}
+                controls
+                playsInline
+                preload="none"
+                className={
+                  v.ratio === 'portrait'
+                    ? 'aspect-[9/16] max-h-[70svh] rounded-xl border border-[var(--color-glass-border-hover)] bg-black md:hidden'
+                    : 'hidden aspect-video w-full max-w-[820px] rounded-xl border border-[var(--color-glass-border-hover)] bg-black md:block md:max-h-[62svh] md:w-auto'
+                }
+              />
+            ))}
+          </div>
         </div>
       );
     case 'step':
