@@ -32,6 +32,9 @@ type Line = { cmd: string; out: string[] };
 
 const mono = { fontFamily: 'var(--font-mono)' } as const;
 
+/** Only the latest command keeps its output; older ones collapse to one line. */
+const MAX_HISTORY = 4;
+
 const HELP = [
   'navigation:',
   '  cd ..              back to the work list',
@@ -212,7 +215,7 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
     past.current = [raw, ...past.current].slice(0, 50);
     const out = execute(raw);
     if (out === null) setHistory([]);
-    else setHistory((h) => [...h, { cmd: raw, out }].slice(-5));
+    else setHistory((h) => [...h, { cmd: raw, out }].slice(-MAX_HISTORY));
   }
 
   function submit() {
@@ -262,12 +265,12 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
               aria-live="polite"
             >
               {history.map((h, i) => (
-                <div key={i}>
+                <div key={i} className={i === history.length - 1 ? '' : 'opacity-50'}>
                   <div className="text-[var(--color-text-secondary)]">
                     <span className="text-[var(--color-text-tertiary)]">$ </span>
                     {h.cmd}
                   </div>
-                  {h.out.length > 0 && (
+                  {i === history.length - 1 && h.out.length > 0 && (
                     <pre className="whitespace-pre-wrap break-words text-[var(--color-text-tertiary)]" style={mono}>
                       {h.out.join('\n')}
                     </pre>
