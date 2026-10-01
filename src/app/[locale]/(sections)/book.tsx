@@ -15,6 +15,7 @@ interface BookSectionProps {
     targetWords: number;
     totalWords: number;
     publishedChapters: number;
+    paused: boolean;
   };
   locale: 'en' | 'fr';
 }
@@ -49,7 +50,7 @@ export function BookSection({ book, locale }: BookSectionProps) {
               Auxance Jourdan
             </span>
             <span className="text-[9px] uppercase tracking-[0.16em] text-[#8a857d]">
-              {t('eyebrow')}
+              {book.paused ? t('pausedEyebrow') : t('eyebrow')}
             </span>
           </div>
 

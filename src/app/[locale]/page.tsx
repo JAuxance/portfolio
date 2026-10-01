@@ -68,6 +68,7 @@ export default async function HomePage({ params }: HomePageProps) {
               (total, chapter) => total + countBookWords(chapter.content),
               0
             ),
+            paused: book.status === 'PAUSED',
             publishedChapters: book.chapters.filter(
               (chapter) => chapter.status === 'PUBLISHED'
             ).length,

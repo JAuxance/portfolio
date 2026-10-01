@@ -1,5 +1,6 @@
+import type { Metadata } from 'next';
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages, setRequestLocale } from 'next-intl/server';
+import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import type { ReactNode } from 'react';
 import { Header } from '@/components/public/header';
@@ -11,6 +12,25 @@ import { db } from '@/lib/db';
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!(locales as readonly string[]).includes(locale)) return {};
+  const t = await getTranslations({ locale, namespace: 'meta' });
+  const description = t('description');
+  const images = [
+    { url: '/og-v2.png', width: 1200, height: 630, alt: 'Auxance Jourdan — Full-stack. ML.' },
+  ];
+  return {
+    description,
+    openGraph: { title: 'Auxance / Portfolio', description, type: 'website', images },
+    twitter: { card: 'summary_large_image', title: 'Auxance / Portfolio', description, images: ['/og-v2.png'] },
+  };
 }
 
 interface LocaleLayoutProps {

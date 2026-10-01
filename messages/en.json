@@ -1,4 +1,7 @@
 {
+  "meta": {
+    "description": "Full-stack developer in training (Flask, PostgreSQL, Docker), preparing for AI/ML and research. Small projects built end to end, and notes on what I actually ended up understanding."
+  },
   "nav": {
     "book": "Book",
     "work": "Work",
@@ -6,7 +9,7 @@
   },
   "hero": {
     "chatPlaceholder": "Ask Heather anything about my work, research, or trajectory",
-    "chip1": "What is JobMatch?",
+    "chip1": "What is TaskFlow?",
     "chip2": "Why ML research?",
     "chip3": "Why China?",
     "more": "More",
@@ -54,7 +57,9 @@
     "back": "Back to the book",
     "previous": "Previous chapter",
     "next": "Next chapter",
-    "draftNotice": "New chapters are currently being written."
+    "draftNotice": "New chapters are currently being written.",
+    "pausedEyebrow": "Book on pause",
+    "pausedNotice": "The book is on pause for now. The chapters already published stay readable here."
   },
   "contact": {
     "title": "Let's talk.",

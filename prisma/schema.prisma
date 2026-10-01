@@ -16,6 +16,7 @@ enum ProjectStatus {
 }
 
 enum StationState {
+  PAST
   CURRENT
   PLANNED
   GOAL

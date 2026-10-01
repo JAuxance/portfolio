@@ -30,7 +30,7 @@ const sourceSerif = Source_Serif_4({
 });
 
 const description =
-  'Full-stack student at Holberton transitioning toward ML research. Building production systems, writing in public, and documenting the road toward research.';
+  'Full-stack developer in training (Flask, PostgreSQL, Docker), preparing for AI/ML and research. Small projects built end to end, and notes on what I actually ended up understanding.';
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();

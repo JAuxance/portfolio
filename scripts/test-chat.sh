@@ -3,6 +3,6 @@
 set -euo pipefail
 curl -sS -X POST http://localhost:3000/api/chat \
   -H 'content-type: application/json' \
-  -d '{"message":"What is JobMatch?","locale":"en"}' \
+  -d '{"message":"What is TaskFlow?","locale":"en"}' \
   --max-time 25
 echo

@@ -49,7 +49,7 @@ export default async function BookPage({ params }: BookPageProps) {
             Auxance Jourdan
           </Link>
           <span className="text-[10px] uppercase tracking-[0.16em] text-[#8a857d]">
-            {t('eyebrow')}
+            {book.status === 'PAUSED' ? t('pausedEyebrow') : t('eyebrow')}
           </span>
         </div>
 
@@ -142,7 +142,7 @@ export default async function BookPage({ params }: BookPageProps) {
             ) : (
               <div className="border-y border-[#e2ded6] py-10 text-center">
                 <p className="font-[var(--font-book)] text-[18px] italic text-[#706b63]">
-                  {t('draftNotice')}
+                  {book.status === 'PAUSED' ? t('pausedNotice') : t('draftNotice')}
                 </p>
               </div>
             )}

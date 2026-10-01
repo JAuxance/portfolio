@@ -29,7 +29,7 @@ const mono = { fontFamily: 'var(--font-mono)' } as const;
 const HELP = [
   'available commands:',
   '  ls                 list the projects',
-  '  open <n | name>    open a project        e.g. open jobmatch',
+  '  open <n | name>    open a project        e.g. open taskflow',
   '  now                what I am doing right now',
   '  whoami             who is this',
   '  email              show + copy my email',
@@ -102,7 +102,7 @@ export function NowTerminal({ locale, projects, now, email, github, twitter, idl
       case 'now':
         return now.length ? now.map((n) => `  [${n.label}] ${n.title}`) : ['nothing right now.'];
       case 'whoami':
-        return ['auxance — full-stack student at Holberton, training toward ML research.'];
+        return ['auxance — full-stack developer in training, preparing for AI/ML.'];
       case 'email':
       case 'mail':
         navigator.clipboard?.writeText(email).catch(() => {});

@@ -25,6 +25,7 @@ import { useSaveState } from '@/components/admin/save-state-context';
 import { cn } from '@/lib/cn';
 
 const STATE_LABELS: Record<StationState, string> = {
+  PAST: 'Passé',
   CURRENT: 'Maintenant',
   PLANNED: 'Prévu',
   GOAL: 'Objectif',

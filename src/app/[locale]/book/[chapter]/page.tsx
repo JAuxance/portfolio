@@ -75,7 +75,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
 
         <header className="mx-auto max-w-[760px] px-6 pt-16 pb-12 md:px-10 md:pt-24 md:pb-16">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8a857d]">
-            {t('eyebrow')}
+            {chapter.book.status === 'PAUSED' ? t('pausedEyebrow') : t('eyebrow')}
           </p>
           <h1 className="mt-5 font-[var(--font-book)] text-[46px] font-bold leading-[0.98] tracking-[-0.05em] text-[#22211f] md:text-[72px]">
             {chapter.title}

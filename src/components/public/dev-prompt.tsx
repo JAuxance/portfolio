@@ -37,7 +37,7 @@ const HELP = [
   '  cd ..              back to the work list',
   '  cd ~               home',
   '  cd <chapter>       jump to a chapter        (see ls)',
-  '  cd ../<project>    switch project           e.g. cd ../jobmatch',
+  '  cd ../<project>    switch project           e.g. cd ../taskflow',
   '  next · prev        next / previous project',
   '  back               browser back',
   '  top · end          first / last scene',
@@ -198,7 +198,7 @@ export function DevPrompt({ locale, slug, projects, repoUrl, liveUrl, chapters, 
         toggle();
         return ['theme toggled.'];
       case 'whoami':
-        return ['auxance — full-stack student at Holberton, training toward ML research.'];
+        return ['auxance — full-stack developer in training, preparing for AI/ML.'];
       case 'date':
         return [new Date().toString()];
       case 'echo':

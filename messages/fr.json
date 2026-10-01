@@ -1,4 +1,7 @@
 {
+  "meta": {
+    "description": "Développeur full-stack en formation (Flask, PostgreSQL, Docker), qui se prépare à l'IA/ML et à la recherche. De petits projets de bout en bout, et des notes sur ce que j'ai fini par comprendre."
+  },
   "nav": {
     "book": "Livre",
     "work": "Travaux",
@@ -6,7 +9,7 @@
   },
   "hero": {
     "chatPlaceholder": "Pose une question à Heather sur mes travaux, ma recherche ou ma trajectoire",
-    "chip1": "C'est quoi JobMatch ?",
+    "chip1": "C'est quoi TaskFlow ?",
     "chip2": "Pourquoi la recherche ML ?",
     "chip3": "Pourquoi la Chine ?",
     "more": "Plus",
@@ -54,7 +57,9 @@
     "back": "Retour au livre",
     "previous": "Chapitre précédent",
     "next": "Chapitre suivant",
-    "draftNotice": "De nouveaux chapitres sont en cours d’écriture."
+    "draftNotice": "De nouveaux chapitres sont en cours d’écriture.",
+    "pausedEyebrow": "Livre en pause",
+    "pausedNotice": "Le livre est en pause pour le moment. Les chapitres déjà publiés restent lisibles ici."
   },
   "contact": {
     "title": "On se parle.",
