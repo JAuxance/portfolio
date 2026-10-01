@@ -275,8 +275,21 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
 }
 
 /* ── Comets ────────────────────────────────────────────────────────────
-   A rare streak across the view (one every ~12–25s). Head dot + a tail
-   that fades to nothing, tinted by the shared accent.                     */
+   Shooting stars: a tapered ribbon that fades to nothing behind a small
+   bright head. One ambient comet every few seconds, plus bursts requested
+   by the `comet <n>` terminal command (up to MAX_COMETS at once).          */
+
+const MAX_COMETS = 50;
+
+interface CometSlot {
+  active: boolean;
+  startAt: number;
+  dur: number;
+  len: number;
+  width: number;
+  from: THREE.Vector3;
+  vel: THREE.Vector3;
+}
 
 interface CometProps {
   dot: THREE.Texture;
@@ -284,108 +297,172 @@ interface CometProps {
   light: boolean;
 }
 
-function Comet({ dot, shown, light }: CometProps) {
-  const head = useRef<THREE.Points>(null);
-  const tail = useRef<THREE.LineSegments>(null);
-  const st = useRef({
-    next: 5 + Math.random() * 5,
-    start: 0,
-    active: false,
-    from: new THREE.Vector3(),
-    vel: new THREE.Vector3(),
-  });
-  // Easter egg: the `comet` terminal command asks for one right now.
+function Comets({ dot, shown, light }: CometProps) {
+  const slots = useRef<CometSlot[]>(
+    Array.from({ length: MAX_COMETS }, () => ({
+      active: false,
+      startAt: 0,
+      dur: 2,
+      len: 12,
+      width: 0.3,
+      from: new THREE.Vector3(),
+      vel: new THREE.Vector3(),
+    }))
+  );
+  const pending = useRef(0); // comets requested by the terminal, not yet launched
+  const nextAmbient = useRef(5 + Math.random() * 5);
+  const bg = useMemo(() => new THREE.Color(light ? '#F6F5F1' : '#000000'), [light]);
+  const tmp = useMemo(() => new THREE.Color(), []);
+  const hot = useMemo(() => new THREE.Color(), []);
+
+  // `comet` / `comet 25` in a terminal → burst of that many (capped).
   useEffect(() => {
-    const summon = () => {
-      if (!st.current.active) st.current.next = 0;
+    const summon = (e: Event) => {
+      const n = Number((e as CustomEvent<{ count?: number }>).detail?.count ?? 1);
+      pending.current = Math.min(MAX_COMETS, pending.current + Math.max(1, Math.floor(n) || 1));
     };
     window.addEventListener('portfolio:comet', summon);
     return () => window.removeEventListener('portfolio:comet', summon);
   }, []);
-  const bg = useMemo(() => new THREE.Color(light ? '#F6F5F1' : '#000000'), [light]);
-  const tmpA = useMemo(() => new THREE.Color(), []);
-  const DURATION = 2.4;
-  const TAIL = 11;
 
-  const tailGeo = useMemo(() => {
+  const ribbon = useMemo(() => {
     const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
-    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(6), 3));
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_COMETS * 4 * 3), 3));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(MAX_COMETS * 4 * 3), 3));
+    const idx: number[] = [];
+    for (let i = 0; i < MAX_COMETS; i++) {
+      const o = i * 4;
+      idx.push(o, o + 1, o + 2, o + 1, o + 3, o + 2);
+    }
+    g.setIndex(idx);
+    return g;
+  }, []);
+  const heads = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_COMETS * 3), 3));
+    g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(MAX_COMETS * 3), 3));
     return g;
   }, []);
 
+  const launch = (c: CometSlot, t: number, cam: THREE.Vector3, delay: number) => {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    // Place the comet far enough to read as a thin streak, then size its path
+    // from the visible half-width at that distance so it always crosses the screen.
+    const dist = 20 + Math.random() * 26;
+    const halfW = 0.95 * dist;
+    const slope = Math.tan(THREE.MathUtils.degToRad(8 + Math.random() * 30));
+    c.active = true;
+    c.startAt = t + delay;
+    c.dur = 1.6 + Math.random() * 1;
+    c.len = halfW * (0.45 + Math.random() * 0.4);
+    c.width = dist * (0.0014 + Math.random() * 0.0018);
+    c.from.set(
+      cam.x - side * halfW * 1.05,
+      cam.y + (Math.random() - 0.25) * dist * 1.1,
+      cam.z - dist
+    );
+    const vx = (2.1 * halfW) / c.dur;
+    c.vel.set(side * vx, -slope * vx, 0);
+  };
+
   useFrame((state) => {
     const t = state.clock.elapsedTime;
-    const c = st.current;
-    if (!c.active && t >= c.next) {
-      const side = Math.random() < 0.5 ? -1 : 1;
-      const cam = state.camera.position;
-      c.from.set(cam.x - side * 11, cam.y + 1 + Math.random() * 7, cam.z - 14 - Math.random() * 8);
-      c.vel.set(side * (9 + Math.random() * 3), -(2.5 + Math.random() * 3), 0);
-      c.start = t;
-      c.active = true;
+    const cam = state.camera.position;
+    const list = slots.current;
+    const free = () => list.find((c) => !c.active);
+
+    // ambient comet (every 2–5 s)
+    if (t >= nextAmbient.current) {
+      const c = free();
+      if (c) launch(c, t, cam, 0);
+      nextAmbient.current = t + 2 + Math.random() * 3;
     }
-    if (!head.current || !tail.current) return;
-    head.current.visible = tail.current.visible = c.active;
-    if (!c.active) return;
-
-    const k = (t - c.start) / DURATION;
-    if (k >= 1) {
-      c.active = false;
-      // Plus de comètes : une toutes les 5 à 10 secondes
-      c.next = t + 5 + Math.random() * 5;
-
-      // Beaucoup : une toutes les 2 à 5 secondes
-      c.next = t + 2 + Math.random() * 3;
-      head.current.visible = tail.current.visible = false;
-      return;
+    // terminal bursts, staggered over ~2.5 s so they do not all start together
+    while (pending.current > 0) {
+      const c = free();
+      if (!c) break;
+      launch(c, t, cam, Math.random() * 2.5);
+      pending.current -= 1;
     }
-    const a = Math.min(1, k / 0.15) * Math.min(1, (1 - k) / 0.3);
-    const dt = t - c.start;
-    head.current.position.set(
-      c.from.x + c.vel.x * dt,
-      c.from.y + c.vel.y * dt,
-      c.from.z + c.vel.z * dt
-    );
 
-    const dir = c.vel.clone().normalize().multiplyScalar(-TAIL);
-    const pos = tailGeo.attributes.position as THREE.BufferAttribute;
-    const hp = head.current.position;
-    pos.setXYZ(0, hp.x, hp.y, hp.z);
-    pos.setXYZ(1, hp.x + dir.x, hp.y + dir.y, hp.z + dir.z);
-    pos.needsUpdate = true;
+    const rp = ribbon.attributes.position as THREE.BufferAttribute;
+    const rc = ribbon.attributes.color as THREE.BufferAttribute;
+    const hp = heads.attributes.position as THREE.BufferAttribute;
+    const hc = heads.attributes.color as THREE.BufferAttribute;
+    hot.copy(shown.current);
+    if (!light) hot.lerp(tmp.set('#ffffff'), 0.55);
 
-    // Head keeps the accent; the tail fades toward the background.
-    const col = tailGeo.attributes.color as THREE.BufferAttribute;
-    const headCol = tmpA.copy(bg).lerp(shown.current, a);
-    col.setXYZ(0, headCol.r, headCol.g, headCol.b);
-    col.setXYZ(1, bg.r, bg.g, bg.b);
-    col.needsUpdate = true;
-
-    const mat = head.current.material as THREE.PointsMaterial;
-    mat.color.copy(shown.current);
-    mat.opacity = a;
+    list.forEach((c, i) => {
+      const o = i * 4;
+      let visible = false;
+      if (c.active && t >= c.startAt) {
+        const k = (t - c.startAt) / c.dur;
+        if (k >= 1) {
+          c.active = false;
+        } else {
+          visible = true;
+          const a = Math.min(1, k / 0.15) * Math.min(1, (1 - k) / 0.3);
+          const dt = t - c.startAt;
+          const hx = c.from.x + c.vel.x * dt;
+          const hy = c.from.y + c.vel.y * dt;
+          const hz = c.from.z;
+          const len2 = Math.hypot(c.vel.x, c.vel.y) || 1;
+          const dx = c.vel.x / len2;
+          const dy = c.vel.y / len2;
+          const px = -dy * c.width * 0.5; // perpendicular, in the screen plane
+          const py = dx * c.width * 0.5;
+          const tx = hx - dx * c.len;
+          const ty = hy - dy * c.len;
+          rp.setXYZ(o, hx + px, hy + py, hz);
+          rp.setXYZ(o + 1, hx - px, hy - py, hz);
+          rp.setXYZ(o + 2, tx + px * 0.06, ty + py * 0.06, hz);
+          rp.setXYZ(o + 3, tx - px * 0.06, ty - py * 0.06, hz);
+          // head end is bright, tail end fades into the background
+          tmp.copy(bg).lerp(hot, a);
+          rc.setXYZ(o, tmp.r, tmp.g, tmp.b);
+          rc.setXYZ(o + 1, tmp.r, tmp.g, tmp.b);
+          rc.setXYZ(o + 2, bg.r, bg.g, bg.b);
+          rc.setXYZ(o + 3, bg.r, bg.g, bg.b);
+          hp.setXYZ(i, hx, hy, hz);
+          hc.setXYZ(i, tmp.r, tmp.g, tmp.b);
+        }
+      }
+      if (!visible) {
+        for (let v = 0; v < 4; v++) {
+          rp.setXYZ(o + v, 0, 0, 1000);
+          rc.setXYZ(o + v, bg.r, bg.g, bg.b);
+        }
+        hp.setXYZ(i, 0, 0, 1000);
+        hc.setXYZ(i, bg.r, bg.g, bg.b);
+      }
+    });
+    rp.needsUpdate = rc.needsUpdate = hp.needsUpdate = hc.needsUpdate = true;
   });
 
   const blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
   return (
     <>
-      <points ref={head} visible={false}>
-        <bufferGeometry>
-          <bufferAttribute attach="attributes-position" args={[new Float32Array([0, 0, 0]), 3]} />
-        </bufferGeometry>
+      <mesh geometry={ribbon} frustumCulled={false}>
+        <meshBasicMaterial
+          vertexColors
+          transparent
+          depthWrite={false}
+          side={THREE.DoubleSide}
+          blending={blending}
+          toneMapped={false}
+        />
+      </mesh>
+      <points geometry={heads} frustumCulled={false}>
         <pointsMaterial
-          size={1.1}
+          size={0.5}
           sizeAttenuation
+          vertexColors
           transparent
           map={dot}
           depthWrite={false}
           blending={blending}
         />
       </points>
-      <lineSegments ref={tail} geometry={tailGeo} visible={false}>
-        <lineBasicMaterial vertexColors transparent depthWrite={false} blending={blending} />
-      </lineSegments>
     </>
   );
 }
@@ -488,7 +565,7 @@ function Scene({ light, animated, count }: SceneProps) {
           blending={blending}
         />
       </points>
-      {animated && <Comet dot={dot} shown={shownRef} light={light} />}
+      {animated && <Comets dot={dot} shown={shownRef} light={light} />}
       {PLANETS.map((spec, i) => (
         <Planet
           key={i}
