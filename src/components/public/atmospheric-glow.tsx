@@ -21,6 +21,8 @@ const COLOR_MAP_LIGHT: Record<Color, string> = {
   white: 'rgba(14, 14, 16, 0.05)',
 };
 
+const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
+
 interface AtmosphericGlowProps {
   color: Color;
   x: string;
@@ -43,8 +45,9 @@ export function AtmosphericGlow({ color, x, y, size = 800, opacity = 1, classNam
         width: size,
         height: size,
         opacity,
-        background: `radial-gradient(circle at center, ${base} 0%, transparent 65%)`,
-        filter: 'blur(60px)',
+        // Eased falloff baked into the gradient: same soft look as the former
+        // blur(60px), without a filter layer the GPU has to re-rasterize.
+        background: `radial-gradient(circle at center, ${mix(base, 78)} 0%, ${mix(base, 66)} 18%, ${mix(base, 40)} 36%, ${mix(base, 17)} 52%, ${mix(base, 5)} 64%, transparent 74%)`,
         transform: 'translate(-50%, -50%)',
       }}
     />

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const DEPTH = 140; // how far the camera travels along -z
@@ -15,15 +15,17 @@ const STOPS: [number, string][] = [
   [1, '#6ee7d0'],
 ];
 
+const STOP_COLORS = STOPS.map(([, c]) => new THREE.Color(c));
+
 function accentAt(p: number, out: THREE.Color) {
   for (let i = 1; i < STOPS.length; i++) {
     if (p <= STOPS[i][0]) {
-      const [a, ca] = STOPS[i - 1];
-      const [b, cb] = STOPS[i];
-      return out.set(ca).lerp(new THREE.Color(cb), (p - a) / (b - a));
+      const a = STOPS[i - 1][0];
+      const b = STOPS[i][0];
+      return out.copy(STOP_COLORS[i - 1]).lerp(STOP_COLORS[i], (p - a) / (b - a));
     }
   }
-  return out.set(STOPS[STOPS.length - 1][1]);
+  return out.copy(STOP_COLORS[STOP_COLORS.length - 1]);
 }
 
 /** Soft round sprite so points render as dots instead of squares. */
@@ -158,25 +160,39 @@ function Planet({ spec, index, dot, shown, light, animated }: PlanetProps) {
   const blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
   const bg = light ? '#F6F5F1' : '#0A0A0B';
 
+  // Materials to tint/fade each frame, collected once instead of traversing per frame.
+  const mats = useRef<{ m: THREE.Material; keep: boolean; alpha: number }[]>([]);
+  useEffect(() => {
+    const list: typeof mats.current = [];
+    group.current?.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.Material | undefined;
+      if (!m) return;
+      const base = o.userData.alpha ?? 0.5;
+      // light mode: normal blending — stronger lines, much softer halo
+      const alpha = light ? (o.userData.halo ? base * 0.3 : Math.min(1, base * 1.6)) : base;
+      list.push({ m, keep: !!o.userData.keep, alpha });
+    });
+    mats.current = list;
+  }, [light, kind, ring, hasMoon]);
+
   useFrame((state) => {
     if (!group.current) return;
     const t = state.clock.elapsedTime;
     const ahead = state.camera.position.z - spec.z; // >0 while the planet is in front
     const fade = Math.min(1, Math.max(0, (ahead - 3) / 7)) * Math.min(1, Math.max(0, (ahead + 6) / 6));
+    // Fully faded out: skip its draw calls entirely.
+    group.current.visible = fade > 0;
+    if (fade <= 0) return;
     if (animated && body.current) body.current.rotation.y = t * 0.12 + index;
     if (animated && moon.current) moon.current.rotation.z = t * 0.35 + index;
-    group.current.traverse((o) => {
-      const m = (o as THREE.Mesh).material as THREE.Material | undefined;
-      if (!m || o.userData.keep) {
-        if (m && o.userData.keep) m.opacity = fade;
-        return;
+    for (const { m, keep, alpha } of mats.current) {
+      if (keep) {
+        m.opacity = fade;
+        continue;
       }
       (m as THREE.LineBasicMaterial).color.copy(shown.current);
-      const base = o.userData.alpha ?? 0.5;
-      // light mode: normal blending — stronger lines, much softer halo
-      const a = light ? (o.userData.halo ? base * 0.3 : Math.min(1, base * 1.6)) : base;
-      m.opacity = a * fade;
-    });
+      m.opacity = alpha * fade;
+    }
   });
 
   return (
@@ -309,6 +325,7 @@ function Comets({ dot, shown, light }: CometProps) {
       vel: new THREE.Vector3(),
     }))
   );
+  const wasVisible = useRef(true);
   const pending = useRef(0); // comets requested by the terminal, not yet launched
   const nextAmbient = useRef(5 + Math.random() * 5);
   const bg = useMemo(() => new THREE.Color(light ? '#F6F5F1' : '#000000'), [light]);
@@ -392,6 +409,7 @@ function Comets({ dot, shown, light }: CometProps) {
     hot.copy(shown.current);
     if (!light) hot.lerp(tmp.set('#ffffff'), 0.55);
 
+    let anyVisible = false;
     list.forEach((c, i) => {
       const o = i * 4;
       let visible = false;
@@ -427,6 +445,7 @@ function Comets({ dot, shown, light }: CometProps) {
           hc.setXYZ(i, tmp.r, tmp.g, tmp.b);
         }
       }
+      anyVisible ||= visible;
       if (!visible) {
         for (let v = 0; v < 4; v++) {
           rp.setXYZ(o + v, 0, 0, 1000);
@@ -436,7 +455,11 @@ function Comets({ dot, shown, light }: CometProps) {
         hc.setXYZ(i, bg.r, bg.g, bg.b);
       }
     });
-    rp.needsUpdate = rc.needsUpdate = hp.needsUpdate = hc.needsUpdate = true;
+    // Re-upload only while comets are on screen (plus one frame to clear the last one).
+    if (anyVisible || wasVisible.current) {
+      rp.needsUpdate = rc.needsUpdate = hp.needsUpdate = hc.needsUpdate = true;
+    }
+    wasVisible.current = anyVisible;
   });
 
   const blending = light ? THREE.NormalBlending : THREE.AdditiveBlending;
@@ -471,9 +494,14 @@ interface SceneProps {
   light: boolean;
   animated: boolean;
   count: number;
+  onReady?: () => void;
 }
 
-function Scene({ light, animated, count }: SceneProps) {
+function Scene({ light, animated, count, onReady }: SceneProps) {
+  const invalidate = useThree((s) => s.invalidate);
+  const readySent = useRef(false);
+  const ink = useMemo(() => new THREE.Color(), []);
+  const hsl = useMemo(() => ({ h: 0, s: 0, l: 0 }), []);
   const points = useRef<THREE.Points>(null);
   const progress = useRef(0);
   const target = useRef(0);
@@ -502,6 +530,8 @@ function Scene({ light, animated, count }: SceneProps) {
     };
     const read = () => {
       target.current = Math.min(1, Math.max(0, window.scrollY / maxScroll.current));
+      // Reduced motion renders on demand: redraw so the journey follows the scroll.
+      invalidate();
     };
     measure();
     read();
@@ -517,10 +547,16 @@ function Scene({ light, animated, count }: SceneProps) {
       window.removeEventListener('scroll', read);
       window.removeEventListener('resize', measure);
     };
-  }, []);
+  }, [invalidate]);
 
   useFrame((state, dt) => {
+    if (!readySent.current) {
+      readySent.current = true;
+      onReady?.();
+    }
+    // Reduced motion: no easing, the camera jumps straight to the scroll position.
     if (animated) progress.current += (target.current - progress.current) * Math.min(1, dt * 4);
+    else progress.current = target.current;
     const p = progress.current;
     const t = state.clock.elapsedTime;
 
@@ -528,9 +564,8 @@ function Scene({ light, animated, count }: SceneProps) {
     // On the cream background the accent becomes a saturated dark "ink".
     let shown = accent;
     if (light) {
-      const hsl = { h: 0, s: 0, l: 0 };
       accent.getHSL(hsl);
-      shown = new THREE.Color().setHSL(hsl.h, Math.max(hsl.s, 0.55), 0.36);
+      shown = ink.setHSL(hsl.h, Math.max(hsl.s, 0.55), 0.36);
     }
     shownRef.current.copy(shown);
 
@@ -581,20 +616,80 @@ function Scene({ light, animated, count }: SceneProps) {
   );
 }
 
-export default function ScrollSceneCanvas({ light, animated }: { light: boolean; animated: boolean }) {
+/**
+ * Safety net for devices that cannot keep up: if the frame rate stays very
+ * low, render at 1x pixel ratio. Devices that run smoothly are never touched.
+ */
+function AdaptiveDpr() {
+  const setDpr = useThree((s) => s.setDpr);
+  const dpr = useThree((s) => s.viewport.dpr);
+  const acc = useRef({ time: 0, frames: 0, slow: 0, warmup: 3, done: false });
+
+  useFrame((_, dt) => {
+    const a = acc.current;
+    if (a.done || dpr <= 1) return;
+    if (dt > 0.5) {
+      // tab was hidden or the page stalled: restart the window
+      a.time = a.frames = 0;
+      return;
+    }
+    if (a.warmup > 0) {
+      a.warmup -= dt;
+      return;
+    }
+    a.time += dt;
+    a.frames += 1;
+    if (a.time < 2) return;
+    const fps = a.frames / a.time;
+    a.time = a.frames = 0;
+    a.slow = fps < 25 ? a.slow + 1 : 0;
+    if (a.slow >= 2) {
+      a.done = true;
+      setDpr(1);
+    }
+  });
+  return null;
+}
+
+interface CanvasProps {
+  light: boolean;
+  animated: boolean;
+  onReady?: () => void;
+  onLost?: () => void;
+  onRestored?: () => void;
+}
+
+export default function ScrollSceneCanvas({ light, animated, onReady, onLost, onRestored }: CanvasProps) {
   const count = useMemo(
     () => (typeof window !== 'undefined' && window.innerWidth < 768 ? 900 : 2800),
     []
   );
+  const cleanup = useRef<() => void>(undefined);
+  useEffect(() => () => cleanup.current?.(), []);
+
   return (
     <Canvas
       flat
       camera={{ fov: 60, near: 0.1, far: 80, position: [0, 0, 0] }}
       dpr={[1, 1.5]}
       frameloop={animated ? 'always' : 'demand'}
-      gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
+      // Default power preference: 'high-performance' makes some dual-GPU
+      // laptops and browsers fail or lose the context.
+      gl={{ alpha: true, antialias: true }}
+      onCreated={({ gl }) => {
+        const el = gl.domElement;
+        const lost = () => onLost?.();
+        const restored = () => onRestored?.();
+        el.addEventListener('webglcontextlost', lost);
+        el.addEventListener('webglcontextrestored', restored);
+        cleanup.current = () => {
+          el.removeEventListener('webglcontextlost', lost);
+          el.removeEventListener('webglcontextrestored', restored);
+        };
+      }}
     >
-      <Scene light={light} animated={animated} count={count} />
+      <Scene light={light} animated={animated} count={count} onReady={onReady} />
+      {animated && <AdaptiveDpr />}
     </Canvas>
   );
 }

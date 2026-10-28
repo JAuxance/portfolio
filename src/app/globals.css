@@ -500,3 +500,27 @@
     display: none;
   }
 }
+
+/* Static starfield behind the WebGL scene: visible while three.js loads, and
+   kept when WebGL is unavailable (no GPU, context lost). Same palette as the scene. */
+.starfield-fallback {
+  --star: 232, 232, 234;
+  --star-tint: 127, 176, 255;
+  background-color: var(--color-bg);
+  background-image:
+    radial-gradient(ellipse at 50% 45%, rgba(var(--star-tint), 0.06), transparent 60%),
+    radial-gradient(1.9px 1.9px at 20px 30px, rgba(var(--star), 0.9), transparent),
+    radial-gradient(1.6px 1.6px at 140px 90px, rgba(var(--star), 0.7), transparent),
+    radial-gradient(2px 2px at 230px 160px, rgba(var(--star-tint), 0.8), transparent),
+    radial-gradient(1.6px 1.6px at 60px 210px, rgba(var(--star), 0.6), transparent),
+    radial-gradient(2.2px 2.2px at 310px 40px, rgba(var(--star), 0.85), transparent),
+    radial-gradient(1.6px 1.6px at 90px 120px, rgba(var(--star), 0.5), transparent),
+    radial-gradient(1.9px 1.9px at 270px 270px, rgba(var(--star), 0.7), transparent),
+    radial-gradient(1.6px 1.6px at 180px 330px, rgba(var(--star-tint), 0.6), transparent);
+  background-size: 100% 100%, 347px 359px, 347px 359px, 347px 359px, 347px 359px,
+    523px 491px, 523px 491px, 523px 491px, 523px 491px;
+}
+:root[data-theme="light"] .starfield-fallback {
+  --star: 14, 14, 16;
+  --star-tint: 60, 90, 200;
+}
